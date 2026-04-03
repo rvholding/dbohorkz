@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes fadeinout {
+  0%   { opacity: 0; transform: scaleX(0.97); }
+  20%  { opacity: 1; transform: scaleX(1); }
+  80%  { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(0.97); }
+}
+
+.animate-fadeinout {
+  animation: fadeinout 4s ease-in-out infinite;
+  transform-origin: left center;
+  will-change: opacity, transform;
+}

@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # Backend Flask
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dbohorkz-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=False
+      - DATABASE_URL=sqlite:///ecommerce.db
+      - FRONTEND_URL=http://localhost:3000
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+    volumes:
+      - ./backend:/app
+    networks:
+      - dbohorkz-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # WhatsApp Service (Node.js)
+  whatsapp-service:
+    build:
+      context: ./whatsapp-service
+      dockerfile: Dockerfile
+    container_name: dbohorkz-whatsapp
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - FLASK_API_URL=http://backend:5000
+      - NODE_ENV=production
+      - BOT_NAME=Sofia Bot
+      - AUTO_REPLY_ENABLED=true
+      - TYPING_DELAY=1000
+    volumes:
+      - ./whatsapp-service:/app
+      - whatsapp-auth:/app/.wwebjs_auth
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - dbohorkz-network
+
+  # Frontend (Nginx)
+  frontend:
+    image: node:18-alpine
+    container_name: dbohorkz-frontend
+    working_dir: /app
+    ports:
+      - "3000:5000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+      - REACT_APP_WHATSAPP_API=http://localhost:3001
+    volumes:
+      - ./frontend:/app
+    command: >
+      sh -c "npm install && 
+             npm run build && 
+             npx serve -s build -l 5000"
+    networks:
+      - dbohorkz-network
+
+networks:
+  dbohorkz-network:
+    driver: bridge
+
+volumes:
+  whatsapp-auth:

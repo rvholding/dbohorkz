@@ -1,0 +1,53 @@
+version: '3.8'
+
+# docker-compose para desarrollo
+# Para producción, usa Railway o DigitalOcean
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dbohorkz-backend-dev
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=True
+      - DATABASE_URL=sqlite:///ecommerce.db
+      - FRONTEND_URL=http://localhost:3000
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+    volumes:
+      - ./backend:/app
+    networks:
+      - dbohorkz-dev
+    command: python run.py
+
+  whatsapp-service:
+    build:
+      context: ./whatsapp-service
+      dockerfile: Dockerfile
+    container_name: dbohorkz-whatsapp-dev
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - FLASK_API_URL=http://backend:5000
+      - NODE_ENV=development
+      - BOT_NAME=Sofia Bot
+      - AUTO_REPLY_ENABLED=true
+      - TYPING_DELAY=1000
+    volumes:
+      - ./whatsapp-service:/app
+      - whatsapp-dev-auth:/app/.wwebjs_auth
+    depends_on:
+      - backend
+    networks:
+      - dbohorkz-dev
+
+networks:
+  dbohorkz-dev:
+    driver: bridge
+
+volumes:
+  whatsapp-dev-auth:

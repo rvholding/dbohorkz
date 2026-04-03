@@ -1,0 +1,56 @@
+# Root .gitignore para todo el proyecto dbohorkz
+
+# Dependencias
+node_modules/
+venv/
+env/
+.venv
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Variables de entorno (NUNCA commitear)
+.env
+.env.local
+.env.*.local
+.env.production.local
+
+# WhatsApp Auth (privado)
+.wwebjs_auth/
+
+# Logs
+npm-debug.log*
+npm-error.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build outputs
+frontend/build/
+backend/instance/
+
+# Base de datos locales
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
+Thumbs.db
+.DS_Store

@@ -1,0 +1,57 @@
+import os
+from dotenv import load_dotenv
+
+# Cargar variables del archivo .env (debe estar en backend/.env)
+load_dotenv()
+
+class Config:
+    """
+    Configuración central de la aplicación.
+    Todas las variables sensibles se leen desde el .env para no exponerlas en el código.
+    """
+
+    # --- Base de datos ---
+    # Por defecto usa SQLite local; en producción se puede apuntar a PostgreSQL con DATABASE_URL
+    SQLALCHEMY_DATABASE_URI = os.getenv(
+        'DATABASE_URL',
+        'sqlite:///ecommerce.db'
+    )
+    SQLALCHEMY_TRACK_MODIFICATIONS = False  # Desactiva señales innecesarias de SQLAlchemy
+
+    # --- Seguridad ---
+    # Si no hay SECRET_KEY en el .env, se genera una aleatoria (no persistente entre reinicios)
+    _secret = os.getenv('SECRET_KEY')
+    _jwt_secret = os.getenv('JWT_SECRET_KEY') or _secret
+    if not _secret:
+        import secrets
+        _secret = secrets.token_hex(32)
+    if not _jwt_secret:
+        import secrets
+        _jwt_secret = secrets.token_hex(32)
+    SECRET_KEY = _secret
+    JWT_SECRET_KEY = _jwt_secret
+    JWT_EXPIRATION_HOURS = int(os.getenv('JWT_EXPIRATION_HOURS', '24'))
+
+    # --- CORS ---
+    # Orígenes permitidos separados por coma en el .env. Ej: http://localhost:3000,https://miweb.com
+    CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:3000').split(',')
+
+    # --- Uploads de imágenes ---
+    # Las imágenes se guardan en frontend/public/Images para que React las sirva directamente
+    UPLOAD_FOLDER = os.getenv(
+        'UPLOAD_FOLDER',
+        os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'public', 'Images')
+    )
+
+    # --- Correo electrónico (Flask-Mail via Gmail) ---
+    # Para activar: configurar MAIL_USERNAME y MAIL_PASSWORD (App Password de Google) en el .env
+    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.getenv('MAIL_USERNAME', '')
+    MAIL_PASSWORD = os.getenv('MAIL_PASSWORD', '')
+    MAIL_DEFAULT_SENDER = os.getenv('MAIL_USERNAME', '')
+    MAIL_RECIPIENT = os.getenv('MAIL_RECIPIENT', 'dbohorkz@gmail.com')
+
+    # --- Integraciones opcionales ---
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')  # Para el chatbot con IA (no activo aún)
