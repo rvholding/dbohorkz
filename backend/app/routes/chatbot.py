@@ -70,7 +70,7 @@ def send_message():
             try:
                 resend.api_key = api_key
                 resend.Emails.send({
-                    'from': 'dbohorkz <onboarding@resend.dev>',
+                    'from': 'dbohorkz <no-reply@dbohorkz.com>',
                     'to': [recipient],
                     'subject': '📬 Nuevo mensaje de contacto — dbohorkz Intendencia Militar',
                     'html': f"""
