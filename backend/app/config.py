@@ -11,11 +11,12 @@ class Config:
     """
 
     # --- Base de datos ---
-    # Por defecto usa SQLite local; en producción se puede apuntar a PostgreSQL con DATABASE_URL
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        'DATABASE_URL',
-        'sqlite:///ecommerce.db'
-    )
+    # Por defecto usa SQLite local; en producción Railway provee DATABASE_URL
+    # Railway usa el esquema 'postgres://' pero SQLAlchemy requiere 'postgresql://'
+    _db_url = os.getenv('DATABASE_URL', 'sqlite:///ecommerce.db')
+    if _db_url.startswith('postgres://'):
+        _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
+    SQLALCHEMY_DATABASE_URI = _db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False  # Desactiva señales innecesarias de SQLAlchemy
 
     # --- Seguridad ---
