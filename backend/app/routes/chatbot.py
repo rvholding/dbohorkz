@@ -63,7 +63,6 @@ def send_message():
         return jsonify({'error': 'Error al guardar el mensaje'}), 500
 
     # Notificación por correo al admin en hilo separado usando Resend
-    print(f'[DEBUG] RESEND_API_KEY presente: {bool(current_app.config.get("RESEND_API_KEY"))}', flush=True)
     if current_app.config.get('RESEND_API_KEY'):
         api_key = current_app.config['RESEND_API_KEY']
         recipient = current_app.config['MAIL_RECIPIENT']
