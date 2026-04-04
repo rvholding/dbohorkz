@@ -88,5 +88,6 @@ Web User      → frontend (React)           → backend (Flask) → SQLite DB
 - `TYPING_DELAY` — Simulated typing delay in ms
 
 ## Deployment
-- **Frontend**: Vercel (`vercel.json` at root configures SPA rewrites)
-- **Backend + WhatsApp**: Railway (see `RAILWAY_SETUP.md`)
+- **Frontend**: Netlify (`frontend/public/_redirects` configures SPA rewrites) — dominio: dbohorkz.com
+- **Backend**: Railway — `dbohorkz-production.up.railway.app`
+- **WhatsApp Service**: Railway (servicio separado) — ver `RAILWAY_SETUP.md`
