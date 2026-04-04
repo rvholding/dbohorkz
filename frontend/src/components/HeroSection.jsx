@@ -45,7 +45,7 @@ export default function HeroSection() {
                 key={src}
                 src={src}
                 alt={`Imagen ${i + 1}`}
-                className={`absolute top-0 left-0 w-full h-full object-contain rounded-2xl shadow-2xl border-2 border-gold border-opacity-30 transition-opacity duration-700 ${i === current ? 'opacity-100' : 'opacity-0'}`}
+                className={`absolute top-0 left-0 w-full h-full object-cover rounded-2xl shadow-2xl border-2 border-gold border-opacity-30 transition-opacity duration-700 ${i === current ? 'opacity-100' : 'opacity-0'}`}
               />
             ))}
           </div>
