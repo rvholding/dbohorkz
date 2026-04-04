@@ -24,4 +24,4 @@ ENV FLASK_ENV=production
 ENV FLASK_DEBUG=False
 
 # Comando para iniciar (gunicorn para producción)
-CMD gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --preload run:app
+CMD gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 1 --timeout 120 run:app
