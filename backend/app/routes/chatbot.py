@@ -1,4 +1,5 @@
 import logging
+import threading
 from flask import request, jsonify, g, current_app
 from flask_mail import Message
 from app.routes import chatbot_bp
@@ -61,36 +62,40 @@ def send_message():
         db.session.rollback()
         return jsonify({'error': 'Error al guardar el mensaje'}), 500
 
-    # Notificación por correo al admin (solo si MAIL_USERNAME está configurado en .env)
+    # Notificación por correo al admin en hilo separado para no bloquear el worker
     if current_app.config.get('MAIL_USERNAME'):
-        try:
-            msg = Message(
-                subject='📬 Nuevo mensaje de contacto — dbohorkz Intendencia Militar',
-                recipients=[current_app.config['MAIL_RECIPIENT']],
-                html=f"""
-                <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;">
-                  <div style="background:#1a1f3a;padding:24px;text-align:center;">
-                    <h2 style="color:#C9A84C;margin:0;font-size:20px;">dbohorkz Intendencia Militar</h2>
-                    <p style="color:#aaa;margin:4px 0 0;font-size:13px;">Nuevo mensaje desde el sitio web</p>
-                  </div>
-                  <div style="padding:28px;">
-                    <p style="margin:0 0 16px;"><strong>Plataforma:</strong> {platform}</p>
-                    <p style="margin:0 0 16px;"><strong>Mensaje:</strong></p>
-                    <div style="background:#f5f5f5;border-left:4px solid #C9A84C;padding:12px 16px;border-radius:4px;font-size:14px;">
-                      {user_message}
-                    </div>
-                    <p style="margin:16px 0 0;"><strong>Respuesta del bot:</strong> {bot_response}</p>
-                  </div>
-                  <div style="background:#f9f9f9;padding:16px;text-align:center;font-size:12px;color:#999;">
-                    dbohorkz Intendencia Militar · 314 218 70 98
-                  </div>
-                </div>
-                """
-            )
-            mail.send(msg)
-        except Exception as e:
-            # El fallo de correo no debe interrumpir la respuesta al usuario
-            logger.warning(f'No se pudo enviar correo de notificación: {e}')
+        app = current_app._get_current_object()
+        def send_mail():
+            with app.app_context():
+                try:
+                    msg = Message(
+                        subject='📬 Nuevo mensaje de contacto — dbohorkz Intendencia Militar',
+                        recipients=[app.config['MAIL_RECIPIENT']],
+                        html=f"""
+                        <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;">
+                          <div style="background:#1a1f3a;padding:24px;text-align:center;">
+                            <h2 style="color:#C9A84C;margin:0;font-size:20px;">dbohorkz Intendencia Militar</h2>
+                            <p style="color:#aaa;margin:4px 0 0;font-size:13px;">Nuevo mensaje desde el sitio web</p>
+                          </div>
+                          <div style="padding:28px;">
+                            <p style="margin:0 0 16px;"><strong>Plataforma:</strong> {platform}</p>
+                            <p style="margin:0 0 16px;"><strong>Mensaje:</strong></p>
+                            <div style="background:#f5f5f5;border-left:4px solid #C9A84C;padding:12px 16px;border-radius:4px;font-size:14px;">
+                              {user_message}
+                            </div>
+                            <p style="margin:16px 0 0;"><strong>Respuesta del bot:</strong> {bot_response}</p>
+                          </div>
+                          <div style="background:#f9f9f9;padding:16px;text-align:center;font-size:12px;color:#999;">
+                            dbohorkz Intendencia Militar · 314 218 70 98
+                          </div>
+                        </div>
+                        """
+                    )
+                    mail.send(msg)
+                    logger.info('Correo de notificación enviado correctamente')
+                except Exception as e:
+                    logger.warning(f'No se pudo enviar correo de notificación: {e}')
+        threading.Thread(target=send_mail, daemon=True).start()
 
     return jsonify({
         'id':           chat_msg.id,
