@@ -40,7 +40,7 @@ def create_app():
 
     # Crear tablas si no existen (SQLite o PostgreSQL según DATABASE_URL)
     with app.app_context():
-        db.create_all()
+        db.create_all(checkfirst=True)
 
     logger.info('App creada correctamente')
     return app
