@@ -68,6 +68,7 @@ def send_message():
         recipient = current_app.config['MAIL_RECIPIENT']
         def send_mail():
             try:
+                print(f'[RESEND] Enviando correo a {recipient}...', flush=True)
                 resend.api_key = api_key
                 resend.Emails.send({
                     'from': 'dbohorkz <no-reply@dbohorkz.com>',
@@ -93,9 +94,9 @@ def send_message():
                     </div>
                     """
                 })
-                logger.info('Correo de notificación enviado correctamente via Resend')
+                print('[RESEND] Correo enviado correctamente', flush=True)
             except Exception as e:
-                logger.warning(f'No se pudo enviar correo de notificación: {e}')
+                print(f'[RESEND] ERROR: {e}', flush=True)
         threading.Thread(target=send_mail, daemon=True).start()
 
     return jsonify({
