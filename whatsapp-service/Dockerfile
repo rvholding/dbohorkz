@@ -1,26 +1,28 @@
-FROM node:18-alpine
+FROM node:18-slim
 
 WORKDIR /app
 
-# Instalar Chromium para whatsapp-web.js
-RUN apk add --no-cache \
+# Instalar Chromium y dependencias necesarias para Puppeteer en Debian slim
+RUN apt-get update && apt-get install -y \
     chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ca-certificates
+    fonts-freefont-ttf \
+    libfreetype6 \
+    libharfbuzz0b \
+    ca-certificates \
+    --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copiar package.json
+# Decirle a Puppeteer dónde está Chromium
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+# Copiar dependencias
 COPY package.json package-lock.json ./
-
-# Instalar dependencias
 RUN npm ci --only=production
 
 # Copiar código
 COPY . .
 
-# Exponer puerto
 EXPOSE 3001
 
-# Comando para iniciar
 CMD ["node", "server.js"]
