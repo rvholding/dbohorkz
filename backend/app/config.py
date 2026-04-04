@@ -54,5 +54,9 @@ class Config:
     MAIL_DEFAULT_SENDER = os.getenv('MAIL_USERNAME', '')
     MAIL_RECIPIENT = os.getenv('MAIL_RECIPIENT', 'dbohorkz@gmail.com')
 
+    # --- Resend (servicio de correo) ---
+    RESEND_API_KEY = os.getenv('RESEND_API_KEY', '')
+    MAIL_RECIPIENT = os.getenv('MAIL_RECIPIENT', 'dbohorkz@gmail.com')
+
     # --- Integraciones opcionales ---
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')  # Para el chatbot con IA (no activo aún)
