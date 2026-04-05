@@ -3,6 +3,8 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_mail import Mail
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from app.config import Config
 
 # Configuración del logger para toda la aplicación
@@ -15,6 +17,7 @@ logger = logging.getLogger(__name__)
 # Instancias globales de extensiones — se inicializan dentro de create_app()
 db = SQLAlchemy()
 mail = Mail()
+limiter = Limiter(key_func=get_remote_address, default_limits=[])
 
 
 def create_app():
@@ -28,9 +31,20 @@ def create_app():
     # Inicializar extensiones con la app
     db.init_app(app)
     mail.init_app(app)
+    limiter.init_app(app)
 
     # Permitir peticiones desde el frontend (CORS_ORIGINS viene del .env)
     CORS(app, origins=app.config['CORS_ORIGINS'])
+
+    # Headers de seguridad HTTP en todas las respuestas
+    @app.after_request
+    def set_security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        return response
 
     # Registrar blueprints (grupos de rutas)
     from app.routes import auth_bp, products_bp, chatbot_bp

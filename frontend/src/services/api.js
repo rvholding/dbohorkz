@@ -15,6 +15,21 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Interceptor: si el token expiró, limpiar sesión y redirigir al login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('adminToken');
+      if (window.location.pathname === '/admin') {
+        window.location.reload();
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // ─── API de Productos ──────────────────────────────────────────────────────────
 export const productosAPI = {
   getAll: (page = 1, perPage = 20) =>

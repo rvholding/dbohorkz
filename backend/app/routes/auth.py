@@ -4,7 +4,7 @@ from flask import request, jsonify, current_app
 import jwt
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.routes import auth_bp
-from app import db
+from app import db, limiter
 from app.models import User
 
 
@@ -19,6 +19,7 @@ def _generate_token(user_id: int) -> str:
 
 
 @auth_bp.route('/register', methods=['POST'])
+@limiter.limit('10 per hour')
 def register():
     data = request.get_json()
 
@@ -59,6 +60,7 @@ def register():
 
 
 @auth_bp.route('/login', methods=['POST'])
+@limiter.limit('5 per minute')
 def login():
     data = request.get_json()
 

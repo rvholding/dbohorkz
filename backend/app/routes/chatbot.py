@@ -1,9 +1,10 @@
 import logging
 import threading
+from html import escape
 import resend
 from flask import request, jsonify, g, current_app
 from app.routes import chatbot_bp
-from app import db
+from app import db, limiter
 from app.models import ChatMessage
 from app.services import ChatbotService
 from app.auth_middleware import require_auth
@@ -17,6 +18,7 @@ MAX_MESSAGE_LENGTH = 1000  # Caracteres máximos por mensaje
 
 
 @chatbot_bp.route('/message', methods=['POST'])
+@limiter.limit('20 per minute')
 def send_message():
     """
     Recibe un mensaje del usuario (web o WhatsApp), genera una respuesta con el chatbot,
@@ -84,9 +86,9 @@ def send_message():
                         <p style="margin:0 0 16px;"><strong>Plataforma:</strong> {platform}</p>
                         <p style="margin:0 0 16px;"><strong>Mensaje:</strong></p>
                         <div style="background:#f5f5f5;border-left:4px solid #C9A84C;padding:12px 16px;border-radius:4px;font-size:14px;">
-                          {user_message}
+                          {escape(user_message)}
                         </div>
-                        <p style="margin:16px 0 0;"><strong>Respuesta del bot:</strong> {bot_response}</p>
+                        <p style="margin:16px 0 0;"><strong>Respuesta del bot:</strong> {escape(bot_response)}</p>
                       </div>
                       <div style="background:#f9f9f9;padding:16px;text-align:center;font-size:12px;color:#999;">
                         dbohorkz Intendencia Militar · 314 218 70 98

@@ -58,5 +58,8 @@ class Config:
     RESEND_API_KEY = os.getenv('RESEND_API_KEY', '')
     MAIL_RECIPIENT = os.getenv('MAIL_RECIPIENT', 'dbohorkz@gmail.com')
 
+    # --- Admin ---
+    ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
+
     # --- Integraciones opcionales ---
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')  # Para el chatbot con IA (no activo aún)

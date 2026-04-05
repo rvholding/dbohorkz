@@ -1,10 +1,11 @@
 import os
+import uuid
 from flask import request, jsonify, current_app
 from werkzeug.utils import secure_filename
 from app.routes import products_bp
-from app import db
+from app import db, limiter
 from app.models import Product
-from app.auth_middleware import require_auth
+from app.auth_middleware import require_admin
 
 # Formatos permitidos para imágenes de producto
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
@@ -36,6 +37,7 @@ def allowed_mime(file):
 # ─── Rutas públicas ────────────────────────────────────────────────────────────
 
 @products_bp.route('/', methods=['GET'])
+@limiter.limit('120 per minute')
 def get_products():
     """
     Lista productos con paginación.
@@ -64,7 +66,7 @@ def get_product(product_id):
 # ─── Rutas protegidas (solo admin) ────────────────────────────────────────────
 
 @products_bp.route('/', methods=['POST'])
-@require_auth
+@require_admin
 def create_product():
     """
     Crea un nuevo producto.
@@ -104,7 +106,7 @@ def create_product():
 
 
 @products_bp.route('/<int:product_id>', methods=['PUT'])
-@require_auth
+@require_admin
 def update_product(product_id):
     """
     Actualiza los campos enviados de un producto existente.
@@ -145,7 +147,7 @@ def update_product(product_id):
 
 
 @products_bp.route('/upload-image', methods=['POST'])
-@require_auth
+@require_admin
 def upload_image():
     """
     Sube una imagen de producto al servidor.
@@ -172,7 +174,8 @@ def upload_image():
     if size > MAX_FILE_SIZE:
         return jsonify({'error': 'La imagen no puede superar 5 MB'}), 400
 
-    filename = secure_filename(file.filename)
+    ext = secure_filename(file.filename).rsplit('.', 1)[1].lower()
+    filename = f"{uuid.uuid4().hex}.{ext}"
     upload_folder = current_app.config.get('UPLOAD_FOLDER')
     os.makedirs(upload_folder, exist_ok=True)
     file.save(os.path.join(upload_folder, filename))
@@ -181,7 +184,7 @@ def upload_image():
 
 
 @products_bp.route('/<int:product_id>', methods=['DELETE'])
-@require_auth
+@require_admin
 def delete_product(product_id):
     """Elimina un producto por ID. Solo accesible por el admin."""
     product = Product.query.get_or_404(product_id)
