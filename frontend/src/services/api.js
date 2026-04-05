@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 // Cliente HTTP base — apunta al backend Flask
-// En producción, definir REACT_APP_API_URL en el .env del frontend
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000',
+  baseURL: API_URL,
 });
 
 // Interceptor: adjunta el token JWT a cada request si el admin está logueado
