@@ -32,7 +32,7 @@ export default function ProductsSection() {
   useEffect(() => {
     productosAPI.getAll(1, 100)
       .then((res) => setProducts(res.data.products))
-      .catch((err) => { console.error('PRODUCTS_ERROR:', err?.message, err?.code, err?.config?.baseURL); setError('No se pudieron cargar los productos. Intente más tarde.'); })
+      .catch(() => setError('No se pudieron cargar los productos. Intente más tarde.'))
       .finally(() => setLoading(false));
   }, []);
 
