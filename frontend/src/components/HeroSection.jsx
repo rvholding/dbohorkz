@@ -37,7 +37,7 @@ export default function HeroSection() {
           </a>
         </div>
 
-        <div className="md:w-1/2 flex flex-col items-center gap-4">
+        <div className="w-full md:w-1/2 flex flex-col items-center gap-4">
           <div className="relative w-full max-w-lg h-96 md:h-[28rem]">
             <div className="absolute inset-0 bg-gold opacity-10 rounded-2xl blur-2xl"></div>
             {IMAGES.map((src, i) => (
