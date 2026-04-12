@@ -34,4 +34,5 @@ class Product(db.Model):
             'image_url':   self.image_url,
             'codigo':      self.codigo or '',
             'categoria':   self.categoria or '',
+            'images':      [img.to_dict() for img in self.images],
         }

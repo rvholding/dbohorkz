@@ -4,7 +4,7 @@ import { authAPI, productosAPI } from '../services/api';
 const CATEGORIAS_LISTA = ['Uniformes y Vestimenta','Uniforme #3','Gorras','Chapuzas','Linternas','Bolsos','Presillas','Correaje y Cinturones','Portatiles y Fundas','Insignias y Bordados','Defensa y Seguridad','Equipos y Accesorios','Elementos para Curso'];
 const EMPTY_PRODUCT = { name: '', description: '', price: '', stock: '', image_url: '', codigo: '', categoria: '' };
 const fmt = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n);
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = process.env.REACT_APP_API_URL || 'https://dbohorkz-production.up.railway.app';
 
 export default function AdminPage() {
   const [token, setToken] = useState(localStorage.getItem('adminToken') || '');
@@ -125,6 +125,33 @@ export default function AdminPage() {
       showMensaje(err.message || 'Error al subir la imagen', true);
     } finally {
       setUploading(prev => ({ ...prev, [product.id]: false }));
+    }
+  }
+
+  async function handleGalleryUpload(product, file) {
+    if (!file) return;
+    setUploading(prev => ({ ...prev, [`gallery_${product.id}`]: true }));
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      await productosAPI.addImage(product.id, formData);
+      showMensaje(`Foto agregada a "${product.name}"`);
+      loadProducts();
+    } catch (err) {
+      showMensaje(err.message || 'Error al subir foto', true);
+    } finally {
+      setUploading(prev => ({ ...prev, [`gallery_${product.id}`]: false }));
+    }
+  }
+
+  async function handleGalleryDelete(product, imageId) {
+    if (!window.confirm('¿Eliminar esta foto?')) return;
+    try {
+      await productosAPI.removeImage(product.id, imageId);
+      showMensaje('Foto eliminada');
+      loadProducts();
+    } catch {
+      showMensaje('Error al eliminar foto', true);
     }
   }
 
@@ -358,6 +385,30 @@ export default function AdminPage() {
                       disabled={uploading[product.id]}
                       onChange={e => handleImageUpload(product, e.target.files[0])} />
                   </label>
+                </div>
+
+                {/* Galería de fotos extras */}
+                <div className="print:hidden">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Galería ({product.images?.length || 0})</label>
+                    <label className="cursor-pointer text-xs bg-gold text-navy font-bold px-2 py-1 rounded hover:bg-gold-dark">
+                      {uploading[`gallery_${product.id}`] ? 'Subiendo...' : '+ Foto'}
+                      <input type="file" accept="image/*" className="hidden"
+                        disabled={uploading[`gallery_${product.id}`]}
+                        onChange={e => handleGalleryUpload(product, e.target.files[0])} />
+                    </label>
+                  </div>
+                  {product.images?.length > 0 && (
+                    <div className="flex gap-1 overflow-x-auto">
+                      {product.images.map(img => (
+                        <div key={img.id} className="relative flex-shrink-0 w-14 h-14">
+                          <img src={img.image_url} alt="" className="w-full h-full object-cover rounded" />
+                          <button onClick={() => handleGalleryDelete(product, img.id)}
+                            className="absolute -top-1 -right-1 bg-red-500 text-white w-4 h-4 rounded-full text-xs leading-none flex items-center justify-center hover:bg-red-600">&times;</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Nombre y código */}

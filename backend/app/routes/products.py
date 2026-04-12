@@ -4,7 +4,7 @@ from flask import request, jsonify, current_app
 from werkzeug.utils import secure_filename
 from app.routes import products_bp
 from app import db, limiter
-from app.models import Product
+from app.models import Product, ProductImage
 from app.auth_middleware import require_admin
 
 # Formatos permitidos para imágenes de producto
@@ -197,3 +197,58 @@ def delete_product(product_id):
         return jsonify({'error': 'Error al eliminar el producto'}), 500
 
     return jsonify({'message': 'Producto eliminado'}), 200
+
+
+# ─── Imágenes adicionales (galería) ──────────────────────────────────────────
+
+@products_bp.route('/<int:product_id>/images', methods=['GET'])
+def get_product_images(product_id):
+    """Lista todas las imágenes de un producto (incluye la principal)."""
+    product = Product.query.get_or_404(product_id)
+    all_images = []
+    if product.image_url:
+        all_images.append({'id': 0, 'image_url': product.image_url, 'position': 0})
+    all_images.extend([img.to_dict() for img in product.images])
+    return jsonify({'images': all_images}), 200
+
+
+@products_bp.route('/<int:product_id>/images', methods=['POST'])
+@require_admin
+def add_product_image(product_id):
+    """Sube una imagen adicional a la galería de un producto."""
+    Product.query.get_or_404(product_id)
+
+    if 'image' not in request.files:
+        return jsonify({'error': 'No se envió ninguna imagen'}), 400
+
+    file = request.files['image']
+    if file.filename == '' or not allowed_file(file.filename) or not allowed_mime(file):
+        return jsonify({'error': 'Archivo inválido'}), 400
+
+    file.seek(0, 2)
+    if file.tell() > MAX_FILE_SIZE:
+        return jsonify({'error': 'La imagen no puede superar 5 MB'}), 400
+    file.seek(0)
+
+    ext = secure_filename(file.filename).rsplit('.', 1)[1].lower()
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    upload_folder = current_app.config.get('UPLOAD_FOLDER')
+    os.makedirs(upload_folder, exist_ok=True)
+    file.save(os.path.join(upload_folder, filename))
+
+    max_pos = db.session.query(db.func.max(ProductImage.position)).filter_by(product_id=product_id).scalar() or 0
+    img = ProductImage(product_id=product_id, image_url=f'/Images/{filename}', position=max_pos + 1)
+    db.session.add(img)
+    db.session.commit()
+
+    return jsonify({'message': 'Imagen agregada', 'image': img.to_dict()}), 201
+
+
+@products_bp.route('/<int:product_id>/images/<int:image_id>', methods=['DELETE'])
+@require_admin
+def delete_product_image(product_id, image_id):
+    """Elimina una imagen de la galería de un producto."""
+    img = ProductImage.query.filter_by(id=image_id, product_id=product_id).first_or_404()
+    db.session.delete(img)
+    db.session.commit()
+    return jsonify({'message': 'Imagen eliminada'}), 200

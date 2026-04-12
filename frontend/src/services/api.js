@@ -38,6 +38,9 @@ export const productosAPI = {
   create: (data) => api.post('/api/products/', data),
   update: (id, data) => api.put(`/api/products/${id}`, data),
   remove: (id)   => api.delete(`/api/products/${id}`),
+  getImages: (id) => api.get(`/api/products/${id}/images`),
+  addImage: (id, formData) => api.post(`/api/products/${id}/images`, formData),
+  removeImage: (productId, imageId) => api.delete(`/api/products/${productId}/images/${imageId}`),
 };
 
 // ─── API de Autenticación ─────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import ProductCard from './ProductCard';
+import ProductModal from './ProductModal';
 import { productosAPI } from '../services/api';
 
 // Categorías del catálogo — el valor (array vacío) es un placeholder;
@@ -27,6 +28,7 @@ export default function ProductsSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [categoriaActiva, setCategoriaActiva] = useState('Todos');
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   // Carga todos los productos al montar el componente (máximo 100 por página)
   useEffect(() => {
@@ -109,13 +111,17 @@ export default function ProductsSection() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {productosFiltrados.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} onVerMas={setSelectedProduct} />
               ))}
             </div>
           </>
         )}
 
       </div>
+
+      {selectedProduct && (
+        <ProductModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+      )}
     </section>
   );
 }
