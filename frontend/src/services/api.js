@@ -57,11 +57,16 @@ export const chatbotAPI = {
   getFaq: () => api.get('/api/chatbot/faq'),
 };
 
-// Helper: convierte URLs relativas de imágenes (/Images/...) a URL absoluta de Railway
+// Helper: resuelve URL de imagen.
+// Imágenes con UUID (subidas via admin) se cargan desde Railway.
+// Imágenes originales (nombres descriptivos) se cargan desde Cloudflare Pages.
 export function imageUrl(path) {
   if (!path) return '';
   if (path.startsWith('http')) return path;
-  return `${API_URL}${path}`;
+  // UUIDs: 32 chars hex — identifica imágenes subidas via admin
+  const filename = path.split('/').pop().split('.')[0];
+  if (/^[a-f0-9]{32}$/.test(filename)) return `${API_URL}${path}`;
+  return path;
 }
 
 export default api;
