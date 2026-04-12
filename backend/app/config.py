@@ -38,11 +38,10 @@ class Config:
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:3000').split(',')
 
     # --- Uploads de imágenes ---
-    # Las imágenes se guardan en frontend/public/Images para que React las sirva directamente
-    UPLOAD_FOLDER = os.getenv(
-        'UPLOAD_FOLDER',
-        os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'public', 'Images')
-    )
+    # En producción (Railway): guarda en /app/uploads
+    # En desarrollo local: guarda en frontend/public/Images
+    _default_upload = os.path.join(os.path.dirname(__file__), '..', 'uploads') if os.getenv('RAILWAY_ENVIRONMENT') else os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'public', 'Images')
+    UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', _default_upload)
 
     # --- Correo electrónico (Flask-Mail via Gmail) ---
     # Para activar: configurar MAIL_USERNAME y MAIL_PASSWORD (App Password de Google) en el .env
@@ -60,6 +59,11 @@ class Config:
 
     # --- Admin ---
     ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
+
+    # --- Cloudinary (almacenamiento de imágenes) ---
+    CLOUDINARY_CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME', '')
+    CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY', '')
+    CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET', '')
 
     # --- Integraciones opcionales ---
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')  # Para el chatbot con IA (no activo aún)

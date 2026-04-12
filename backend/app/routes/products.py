@@ -1,5 +1,7 @@
 import os
 import uuid
+import cloudinary
+import cloudinary.uploader
 from flask import request, jsonify, current_app
 from werkzeug.utils import secure_filename
 from app.routes import products_bp
@@ -9,29 +11,69 @@ from app.auth_middleware import require_admin
 
 # Formatos permitidos para imágenes de producto
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
-ALLOWED_MIME_TYPES = {'image/jpeg', 'image/png', 'image/webp'}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
 
 def allowed_file(filename):
-    """Verifica que la extensión del archivo esté en la lista permitida."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def allowed_mime(file):
-    """
-    Valida el tipo real del archivo leyendo sus primeros bytes (magic bytes).
-    Previene que alguien suba un archivo malicioso renombrado como .jpg.
-    """
     header = file.read(12)
     file.seek(0)
-    if header[:3] == b'\xff\xd8\xff':           # JPEG
+    if header[:3] == b'\xff\xd8\xff':
         return True
-    if header[:4] == b'\x89PNG':                 # PNG
+    if header[:4] == b'\x89PNG':
         return True
-    if header[:4] == b'RIFF' and header[8:12] == b'WEBP':  # WEBP
+    if header[:4] == b'RIFF' and header[8:12] == b'WEBP':
         return True
     return False
+
+
+def _upload_to_cloudinary(file):
+    """Sube un archivo a Cloudinary y retorna la URL pública."""
+    cloud_name = current_app.config.get('CLOUDINARY_CLOUD_NAME')
+    if not cloud_name:
+        raise ValueError('Cloudinary no está configurado')
+
+    cloudinary.config(
+        cloud_name=cloud_name,
+        api_key=current_app.config.get('CLOUDINARY_API_KEY'),
+        api_secret=current_app.config.get('CLOUDINARY_API_SECRET'),
+        secure=True
+    )
+    result = cloudinary.uploader.upload(file, folder='dbohorkz')
+    return result['secure_url']
+
+
+def _upload_image(file):
+    """Sube imagen a Cloudinary si está configurado, sino al filesystem local."""
+    if current_app.config.get('CLOUDINARY_CLOUD_NAME'):
+        return _upload_to_cloudinary(file)
+
+    # Fallback local
+    ext = secure_filename(file.filename).rsplit('.', 1)[1].lower()
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    upload_folder = current_app.config.get('UPLOAD_FOLDER')
+    os.makedirs(upload_folder, exist_ok=True)
+    file.save(os.path.join(upload_folder, filename))
+    return f'/Images/{filename}'
+
+
+def _validate_image(file):
+    """Valida extensión, magic bytes y tamaño. Retorna error string o None."""
+    if file.filename == '':
+        return 'Nombre de archivo vacío'
+    if not allowed_file(file.filename):
+        return 'Formato no permitido. Use jpg, jpeg, png o webp'
+    if not allowed_mime(file):
+        return 'El contenido del archivo no corresponde a una imagen válida'
+    file.seek(0, 2)
+    size = file.tell()
+    file.seek(0)
+    if size > MAX_FILE_SIZE:
+        return 'La imagen no puede superar 5 MB'
+    return None
 
 
 # ─── Rutas públicas ────────────────────────────────────────────────────────────
@@ -39,10 +81,6 @@ def allowed_mime(file):
 @products_bp.route('/', methods=['GET'])
 @limiter.limit('120 per minute')
 def get_products():
-    """
-    Lista productos con paginación.
-    Query params: page (int), per_page (int, máx 100)
-    """
     page     = max(request.args.get('page', 1, type=int), 1)
     per_page = min(max(request.args.get('per_page', 20, type=int), 1), 100)
     pagination = Product.query.order_by(Product.created_at.desc()).paginate(
@@ -58,7 +96,6 @@ def get_products():
 
 @products_bp.route('/<int:product_id>', methods=['GET'])
 def get_product(product_id):
-    """Retorna un producto por ID. Devuelve 404 si no existe."""
     product = Product.query.get_or_404(product_id)
     return jsonify(product.to_dict()), 200
 
@@ -68,11 +105,6 @@ def get_product(product_id):
 @products_bp.route('/', methods=['POST'])
 @require_admin
 def create_product():
-    """
-    Crea un nuevo producto.
-    Requiere JWT válido en el header Authorization.
-    Body JSON: name (requerido), price (requerido), description, stock, image_url, codigo, categoria
-    """
     data = request.get_json()
 
     if not data or 'name' not in data or 'price' not in data:
@@ -108,10 +140,6 @@ def create_product():
 @products_bp.route('/<int:product_id>', methods=['PUT'])
 @require_admin
 def update_product(product_id):
-    """
-    Actualiza los campos enviados de un producto existente.
-    Solo modifica los campos que vienen en el body (PATCH-like).
-    """
     product = Product.query.get_or_404(product_id)
     data = request.get_json()
 
@@ -149,44 +177,25 @@ def update_product(product_id):
 @products_bp.route('/upload-image', methods=['POST'])
 @require_admin
 def upload_image():
-    """
-    Sube una imagen de producto al servidor.
-    La guarda en frontend/public/Images/ para que React la sirva como /Images/nombre.jpg
-    Validaciones: extensión, magic bytes, tamaño máximo 5 MB.
-    """
     if 'image' not in request.files:
         return jsonify({'error': 'No se envió ninguna imagen'}), 400
 
     file = request.files['image']
-    if file.filename == '':
-        return jsonify({'error': 'Nombre de archivo vacío'}), 400
+    error = _validate_image(file)
+    if error:
+        return jsonify({'error': error}), 400
 
-    if not allowed_file(file.filename):
-        return jsonify({'error': 'Formato no permitido. Use jpg, jpeg, png o webp'}), 400
+    try:
+        image_url = _upload_image(file)
+    except Exception as e:
+        return jsonify({'error': f'Error al subir imagen: {str(e)}'}), 500
 
-    if not allowed_mime(file):
-        return jsonify({'error': 'El contenido del archivo no corresponde a una imagen válida'}), 400
-
-    # Verificar tamaño (seek al final, luego volver al inicio)
-    file.seek(0, 2)
-    size = file.tell()
-    file.seek(0)
-    if size > MAX_FILE_SIZE:
-        return jsonify({'error': 'La imagen no puede superar 5 MB'}), 400
-
-    ext = secure_filename(file.filename).rsplit('.', 1)[1].lower()
-    filename = f"{uuid.uuid4().hex}.{ext}"
-    upload_folder = current_app.config.get('UPLOAD_FOLDER')
-    os.makedirs(upload_folder, exist_ok=True)
-    file.save(os.path.join(upload_folder, filename))
-
-    return jsonify({'image_url': f'/Images/{filename}'}), 200
+    return jsonify({'image_url': image_url}), 200
 
 
 @products_bp.route('/<int:product_id>', methods=['DELETE'])
 @require_admin
 def delete_product(product_id):
-    """Elimina un producto por ID. Solo accesible por el admin."""
     product = Product.query.get_or_404(product_id)
 
     try:
@@ -203,7 +212,6 @@ def delete_product(product_id):
 
 @products_bp.route('/<int:product_id>/images', methods=['GET'])
 def get_product_images(product_id):
-    """Lista todas las imágenes de un producto (incluye la principal)."""
     product = Product.query.get_or_404(product_id)
     all_images = []
     if product.image_url:
@@ -215,29 +223,23 @@ def get_product_images(product_id):
 @products_bp.route('/<int:product_id>/images', methods=['POST'])
 @require_admin
 def add_product_image(product_id):
-    """Sube una imagen adicional a la galería de un producto."""
     Product.query.get_or_404(product_id)
 
     if 'image' not in request.files:
         return jsonify({'error': 'No se envió ninguna imagen'}), 400
 
     file = request.files['image']
-    if file.filename == '' or not allowed_file(file.filename) or not allowed_mime(file):
-        return jsonify({'error': 'Archivo inválido'}), 400
+    error = _validate_image(file)
+    if error:
+        return jsonify({'error': error}), 400
 
-    file.seek(0, 2)
-    if file.tell() > MAX_FILE_SIZE:
-        return jsonify({'error': 'La imagen no puede superar 5 MB'}), 400
-    file.seek(0)
-
-    ext = secure_filename(file.filename).rsplit('.', 1)[1].lower()
-    filename = f"{uuid.uuid4().hex}.{ext}"
-    upload_folder = current_app.config.get('UPLOAD_FOLDER')
-    os.makedirs(upload_folder, exist_ok=True)
-    file.save(os.path.join(upload_folder, filename))
+    try:
+        image_url = _upload_image(file)
+    except Exception as e:
+        return jsonify({'error': f'Error al subir imagen: {str(e)}'}), 500
 
     max_pos = db.session.query(db.func.max(ProductImage.position)).filter_by(product_id=product_id).scalar() or 0
-    img = ProductImage(product_id=product_id, image_url=f'/Images/{filename}', position=max_pos + 1)
+    img = ProductImage(product_id=product_id, image_url=image_url, position=max_pos + 1)
     db.session.add(img)
     db.session.commit()
 
@@ -247,7 +249,6 @@ def add_product_image(product_id):
 @products_bp.route('/<int:product_id>/images/<int:image_id>', methods=['DELETE'])
 @require_admin
 def delete_product_image(product_id, image_id):
-    """Elimina una imagen de la galería de un producto."""
     img = ProductImage.query.filter_by(id=image_id, product_id=product_id).first_or_404()
     db.session.delete(img)
     db.session.commit()
