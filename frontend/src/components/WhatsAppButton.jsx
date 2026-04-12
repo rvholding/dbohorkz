@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useCart } from '../context/CartContext';
 
 export default function WhatsAppButton() {
   const [visible, setVisible] = useState(false);
   const [tooltip, setTooltip] = useState(true);
+  const { isOpen: cartOpen } = useCart();
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 1000);
@@ -11,7 +13,7 @@ export default function WhatsAppButton() {
   }, []);
 
   return (
-    <div className={`fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 transition-all duration-500 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+    <div className={`fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 transition-all duration-500 ${visible && !cartOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}>
 
       {/* Instagram */}
       <a
