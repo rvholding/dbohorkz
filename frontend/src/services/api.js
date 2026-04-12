@@ -57,6 +57,14 @@ export const chatbotAPI = {
   getFaq: () => api.get('/api/chatbot/faq'),
 };
 
+// ─── API de Pedidos ───────────────────────────────────────────────────────────
+export const ordersAPI = {
+  create: (data) => api.post('/api/orders/', data),
+  getAll: (page = 1, perPage = 20, status = '') =>
+    api.get('/api/orders/', { params: { page, per_page: perPage, status } }),
+  update: (id, data) => api.put(`/api/orders/${id}`, data),
+};
+
 // Helper: resuelve URL de imagen.
 // Imágenes con UUID (subidas via admin) se cargan desde Railway.
 // Imágenes originales (nombres descriptivos) se cargan desde Cloudflare Pages.

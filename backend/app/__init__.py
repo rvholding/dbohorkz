@@ -55,10 +55,11 @@ def create_app():
         return send_from_directory(upload_folder, filename)
 
     # Registrar blueprints (grupos de rutas)
-    from app.routes import auth_bp, products_bp, chatbot_bp
+    from app.routes import auth_bp, products_bp, chatbot_bp, orders_bp
     app.register_blueprint(auth_bp)       # /api/auth/
     app.register_blueprint(products_bp)   # /api/products/
     app.register_blueprint(chatbot_bp)    # /api/chatbot/
+    app.register_blueprint(orders_bp)     # /api/orders/
 
     # Crear tablas si no existen (SQLite o PostgreSQL según DATABASE_URL)
     with app.app_context():

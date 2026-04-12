@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { authAPI, productosAPI, imageUrl } from '../services/api';
+import { authAPI, productosAPI, ordersAPI, imageUrl } from '../services/api';
 
 const CATEGORIAS_LISTA = ['Uniformes y Vestimenta','Uniforme #3','Gorras','Chapuzas','Linternas','Bolsos','Presillas','Correaje y Cinturones','Portatiles y Fundas','Insignias y Bordados','Defensa y Seguridad','Equipos y Accesorios','Elementos para Curso'];
 const EMPTY_PRODUCT = { name: '', description: '', price: '', stock: '', image_url: '', codigo: '', categoria: '' };
@@ -21,10 +21,34 @@ export default function AdminPage() {
   const [nuevoProducto, setNuevoProducto] = useState(EMPTY_PRODUCT);
   const [creando, setCreando] = useState(false);
   const [nuevaImagen, setNuevaImagen] = useState(null);
+  const [activeTab, setActiveTab] = useState('productos');
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
 
   useEffect(() => {
     if (token) loadProducts();
   }, [token]);
+
+  useEffect(() => {
+    if (token && activeTab === 'pedidos') loadOrders();
+  }, [token, activeTab]);
+
+  function loadOrders() {
+    setOrdersLoading(true);
+    ordersAPI.getAll(1, 100)
+      .then(res => setOrders(res.data.orders))
+      .finally(() => setOrdersLoading(false));
+  }
+
+  async function updateOrderStatus(orderId, status) {
+    try {
+      await ordersAPI.update(orderId, { status });
+      showMensaje(`Pedido actualizado a "${status}"`);
+      loadOrders();
+    } catch {
+      showMensaje('Error al actualizar pedido', true);
+    }
+  }
 
   function loadProducts() {
     setLoading(true);
@@ -267,7 +291,77 @@ export default function AdminPage() {
         </div>
       )}
 
+      {/* Tabs */}
+      <div className="bg-white border-b print:hidden">
+        <div className="container mx-auto px-4 flex gap-1">
+          <button onClick={() => setActiveTab('productos')}
+            className={`px-6 py-3 font-bold text-sm uppercase tracking-wide border-b-2 transition-colors ${activeTab === 'productos' ? 'border-gold text-navy' : 'border-transparent text-gray-400 hover:text-navy'}`}>
+            Productos ({products.length})
+          </button>
+          <button onClick={() => setActiveTab('pedidos')}
+            className={`px-6 py-3 font-bold text-sm uppercase tracking-wide border-b-2 transition-colors ${activeTab === 'pedidos' ? 'border-gold text-navy' : 'border-transparent text-gray-400 hover:text-navy'}`}>
+            Pedidos ({orders.length})
+          </button>
+        </div>
+      </div>
+
       <div className="container mx-auto px-4 py-8">
+
+        {/* ═══ PESTAÑA PEDIDOS ═══ */}
+        {activeTab === 'pedidos' && (
+          <div>
+            <h2 className="text-2xl font-bold text-navy mb-6">Pedidos</h2>
+            {ordersLoading ? (
+              <div className="flex justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
+              </div>
+            ) : orders.length === 0 ? (
+              <p className="text-center text-gray-400 py-12">No hay pedidos aún</p>
+            ) : (
+              <div className="space-y-4">
+                {orders.map(order => (
+                  <div key={order.id} className="bg-white rounded-xl shadow p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                      <div>
+                        <span className="font-bold text-navy text-lg">{order.order_number}</span>
+                        <span className="ml-3 text-xs text-gray-400">{new Date(order.created_at).toLocaleString('es-CO')}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <select value={order.status} onChange={e => updateOrderStatus(order.id, e.target.value)}
+                          className={`text-xs font-bold px-3 py-1 rounded-full border ${
+                            order.status === 'pendiente' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                            order.status === 'confirmado' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                            order.status === 'enviado' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                            order.status === 'entregado' ? 'bg-green-50 text-green-700 border-green-200' :
+                            'bg-red-50 text-red-700 border-red-200'
+                          }`}>
+                          <option value="pendiente">Pendiente</option>
+                          <option value="confirmado">Confirmado</option>
+                          <option value="enviado">Enviado</option>
+                          <option value="entregado">Entregado</option>
+                          <option value="cancelado">Cancelado</option>
+                        </select>
+                        <span className="font-bold text-navy text-lg">{fmt(order.total)}</span>
+                      </div>
+                    </div>
+                    {order.customer_name && <p className="text-sm text-gray-600 mb-1">Cliente: <strong>{order.customer_name}</strong> {order.customer_phone && `· ${order.customer_phone}`}</p>}
+                    <div className="border-t pt-2 mt-2">
+                      {order.items.map(item => (
+                        <div key={item.id} className="flex justify-between text-sm py-1">
+                          <span className="text-gray-700">{item.product_name} <span className="text-gray-400">x{item.qty}</span></span>
+                          <span className="font-semibold text-navy">{fmt(item.subtotal)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ PESTAÑA PRODUCTOS ═══ */}
+        {activeTab === 'productos' && <>
         {/* Barra de acciones */}
         <div className="flex flex-wrap justify-between items-center mb-6 gap-3 print:hidden">
           <h2 className="text-2xl font-bold text-navy">Productos ({products.length})</h2>
@@ -479,6 +573,7 @@ export default function AdminPage() {
             ))}
           </div>
         )}
+        </>}
       </div>
     </div>
   );
