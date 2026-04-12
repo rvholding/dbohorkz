@@ -15,7 +15,7 @@ export default function CartDrawer() {
       <div className="fixed inset-0 bg-black/50 z-[60]" onClick={closeCart} />
 
       {/* Drawer */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white z-[70] shadow-2xl flex flex-col">
+      <div className="fixed right-0 top-0 h-full w-[90vw] max-w-lg bg-white z-[70] shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b bg-navy text-white">
           <h2 className="font-bold text-lg">
