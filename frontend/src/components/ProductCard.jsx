@@ -40,10 +40,13 @@ export default function ProductCard({ product, onVerMas }) {
       {/* Descripción */}
       <p className="text-gray-500 text-sm mb-3 flex-1">{description}</p>
 
-      {/* Precio */}
-      <div className="mb-3">
+      {/* Precio y disponibilidad */}
+      <div className="flex items-center justify-between mb-3">
         <span className="text-gold-dark font-bold text-xl">
           ${typeof price === 'number' ? price.toLocaleString('es-CO') : price}
+        </span>
+        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-green-50 text-green-700 border border-green-200">
+          Disponible
         </span>
       </div>
 
