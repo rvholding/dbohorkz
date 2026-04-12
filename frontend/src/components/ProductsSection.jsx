@@ -3,24 +3,21 @@ import ProductCard from './ProductCard';
 import ProductModal from './ProductModal';
 import { productosAPI } from '../services/api';
 
-// Categorías del catálogo — el valor (array vacío) es un placeholder;
-// el filtrado real usa el campo `categoria` que viene de la base de datos.
-const CATEGORIAS = {
-  'Todos': null,
-  'Uniformes y Vestimenta': [],
-  'Uniforme #3': [],
-  'Gorras': [],
-  'Chapuzas': [],
-  'Linternas': [],
-  'Bolsos': [],
-  'Presillas': [],
-  'Correaje y Cinturones': [],
-  'Portatiles y Fundas': [],
-  'Insignias y Bordados': [],
-  'Defensa y Seguridad': [],
-  'Equipos y Accesorios': [],
-  'Elementos para Curso': [],
-};
+const CATEGORIAS = [
+  'Uniformes y Vestimenta',
+  'Uniforme #3',
+  'Gorras',
+  'Chapuzas',
+  'Linternas',
+  'Bolsos',
+  'Presillas',
+  'Correaje y Cinturones',
+  'Portatiles y Fundas',
+  'Insignias y Bordados',
+  'Defensa y Seguridad',
+  'Equipos y Accesorios',
+  'Elementos para Curso',
+];
 
 
 export default function ProductsSection() {
@@ -29,8 +26,9 @@ export default function ProductsSection() {
   const [error, setError] = useState(null);
   const [categoriaActiva, setCategoriaActiva] = useState('Todos');
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Carga todos los productos al montar el componente (máximo 100 por página)
   useEffect(() => {
     productosAPI.getAll(1, 100)
       .then((res) => setProducts(res.data.products))
@@ -38,84 +36,145 @@ export default function ProductsSection() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Filtra los productos según la categoría seleccionada
   const productosFiltrados = useMemo(() => {
     if (categoriaActiva === 'Todos') return products;
     return products.filter(p => p.categoria === categoriaActiva);
   }, [products, categoriaActiva]);
 
-  // Calcula cuántos productos hay en cada categoría para mostrarlo en el badge
   const conteos = useMemo(() => {
     const c = { 'Todos': products.length };
-    Object.keys(CATEGORIAS).forEach(cat => {
-      if (cat !== 'Todos') c[cat] = products.filter(p => p.categoria === cat).length;
+    CATEGORIAS.forEach(cat => {
+      c[cat] = products.filter(p => p.categoria === cat).length;
     });
     return c;
   }, [products]);
+
+  function selectCategoria(cat) {
+    setCategoriaActiva(cat);
+    setMobileSidebarOpen(false);
+  }
+
+  const sidebarContent = (
+    <div className="space-y-1">
+      {/* Accordion header */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="w-full flex items-center justify-between py-3 px-1 border-b-2 border-gold text-left"
+      >
+        <span className="font-bold text-navy uppercase tracking-wide text-sm">Categoría</span>
+        <span className="text-gray-400 text-lg">{sidebarOpen ? '−' : '+'}</span>
+      </button>
+
+      {sidebarOpen && (
+        <div className="space-y-0.5 pt-2">
+          <button
+            onClick={() => selectCategoria('Todos')}
+            className={`w-full text-left px-2 py-2 text-sm rounded transition-colors ${
+              categoriaActiva === 'Todos'
+                ? 'bg-gold/10 text-gold font-bold border-l-3 border-gold'
+                : 'text-gray-700 hover:text-gold hover:bg-gray-50'
+            }`}
+          >
+            Todos
+            <span className="ml-1 text-xs text-gray-400">({conteos['Todos'] || 0})</span>
+          </button>
+          {CATEGORIAS.map(cat => (
+            <button
+              key={cat}
+              onClick={() => selectCategoria(cat)}
+              className={`w-full text-left px-2 py-2 text-sm rounded transition-colors ${
+                categoriaActiva === cat
+                  ? 'bg-gold/10 text-gold font-bold border-l-3 border-gold'
+                  : 'text-gray-700 hover:text-gold hover:bg-gray-50'
+              }`}
+            >
+              {cat}
+              <span className="ml-1 text-xs text-gray-400">({conteos[cat] || 0})</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <section className="py-16 bg-gray-50" id="productos">
       <div className="container mx-auto px-6">
 
-        {/* Encabezado de sección */}
-        <div className="text-center mb-8">
+        {/* Encabezado */}
+        <div className="text-center mb-10">
           <p className="text-gold uppercase tracking-widest text-sm font-semibold mb-2">Catálogo</p>
           <h2 className="text-3xl font-bold text-navy">Nuestros Productos</h2>
           <div className="w-16 h-1 bg-gold mx-auto mt-3 rounded"></div>
         </div>
 
-        {/* Botones de filtro por categoría — se muestran solo cuando hay productos cargados */}
+        {/* Botón categorías en móvil */}
         {!loading && !error && products.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-2 mb-10">
-            {Object.keys(CATEGORIAS).map(cat => (
-              <button
-                key={cat}
-                onClick={() => setCategoriaActiva(cat)}
-                className={`px-4 py-2 rounded-full text-sm font-semibold border transition-all duration-200 ${
-                  categoriaActiva === cat
-                    ? 'bg-gold text-navy border-gold shadow-md'
-                    : 'bg-white text-navy border-gray-200 hover:border-gold hover:text-gold'
-                }`}
-              >
-                {cat}
-                {/* Badge con el conteo de productos en esa categoría */}
-                <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${categoriaActiva === cat ? 'bg-navy text-gold' : 'bg-gray-100 text-gray-500'}`}>
-                  {conteos[cat] || 0}
-                </span>
-              </button>
-            ))}
+          <button
+            onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+            className="md:hidden w-full mb-4 flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm"
+          >
+            <span className="font-semibold text-navy text-sm">
+              {categoriaActiva === 'Todos' ? 'Todas las categorías' : categoriaActiva}
+            </span>
+            <span className="text-gray-400">{mobileSidebarOpen ? '▲' : '▼'}</span>
+          </button>
+        )}
+
+        {/* Sidebar móvil (dropdown) */}
+        {mobileSidebarOpen && (
+          <div className="md:hidden bg-white border border-gray-200 rounded-lg p-4 mb-4 shadow-sm">
+            {sidebarContent}
           </div>
         )}
 
-        {/* Estado de carga */}
-        {loading && (
-          <div className="flex justify-center py-16">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
+        {/* Layout principal: sidebar + grid */}
+        <div className="flex gap-8">
+
+          {/* Sidebar desktop */}
+          {!loading && !error && products.length > 0 && (
+            <aside className="hidden md:block w-56 flex-shrink-0">
+              <div className="sticky top-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <h3 className="font-bold text-navy text-base mb-3">Busca por Catálogo:</h3>
+                <div className="w-full h-0.5 bg-gold/30 mb-3"></div>
+                {sidebarContent}
+              </div>
+            </aside>
+          )}
+
+          {/* Contenido principal */}
+          <div className="flex-1 min-w-0">
+            {/* Estado de carga */}
+            {loading && (
+              <div className="flex justify-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
+              </div>
+            )}
+
+            {/* Error */}
+            {error && <p className="text-center text-red-500 py-8">{error}</p>}
+
+            {/* Sin resultados */}
+            {!loading && !error && productosFiltrados.length === 0 && (
+              <p className="text-center text-gray-400 py-8">No hay productos en esta categoría.</p>
+            )}
+
+            {/* Grid de productos */}
+            {!loading && !error && productosFiltrados.length > 0 && (
+              <>
+                <p className="text-sm text-gray-400 mb-4">
+                  Mostrando <span className="font-semibold text-navy">{productosFiltrados.length}</span> productos
+                  {categoriaActiva !== 'Todos' && <> en <span className="font-semibold text-gold">{categoriaActiva}</span></>}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {productosFiltrados.map((product) => (
+                    <ProductCard key={product.id} product={product} onVerMas={setSelectedProduct} />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-        )}
-
-        {/* Error al cargar */}
-        {error && <p className="text-center text-red-500 py-8">{error}</p>}
-
-        {/* Sin resultados en la categoría seleccionada */}
-        {!loading && !error && productosFiltrados.length === 0 && (
-          <p className="text-center text-gray-400 py-8">No hay productos en esta categoría.</p>
-        )}
-
-        {/* Grid de productos */}
-        {!loading && !error && productosFiltrados.length > 0 && (
-          <>
-            <p className="text-sm text-gray-400 mb-4 text-center">
-              Mostrando <span className="font-semibold text-navy">{productosFiltrados.length}</span> productos
-              {categoriaActiva !== 'Todos' && <> en <span className="font-semibold text-gold">{categoriaActiva}</span></>}
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {productosFiltrados.map((product) => (
-                <ProductCard key={product.id} product={product} onVerMas={setSelectedProduct} />
-              ))}
-            </div>
-          </>
-        )}
+        </div>
 
       </div>
 
