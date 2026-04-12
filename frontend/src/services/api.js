@@ -57,4 +57,11 @@ export const chatbotAPI = {
   getFaq: () => api.get('/api/chatbot/faq'),
 };
 
+// Helper: convierte URLs relativas de imágenes (/Images/...) a URL absoluta de Railway
+export function imageUrl(path) {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `${API_URL}${path}`;
+}
+
 export default api;

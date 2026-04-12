@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { authAPI, productosAPI } from '../services/api';
+import { authAPI, productosAPI, imageUrl } from '../services/api';
 
 const CATEGORIAS_LISTA = ['Uniformes y Vestimenta','Uniforme #3','Gorras','Chapuzas','Linternas','Bolsos','Presillas','Correaje y Cinturones','Portatiles y Fundas','Insignias y Bordados','Defensa y Seguridad','Equipos y Accesorios','Elementos para Curso'];
 const EMPTY_PRODUCT = { name: '', description: '', price: '', stock: '', image_url: '', codigo: '', categoria: '' };
@@ -376,7 +376,7 @@ export default function AdminPage() {
               <div key={product.id} className="bg-white rounded-xl shadow p-4 flex flex-col gap-3 print:shadow-none print:border print:border-gray-200 print:rounded-lg print:p-3">
                 {/* Imagen */}
                 <div className="relative print:static">
-                  <img src={product.image_url || ''} alt={product.name}
+                  <img src={imageUrl(product.image_url)} alt={product.name}
                     className="w-full h-40 object-cover rounded-lg bg-gray-100 print:h-32"
                     onError={e => { e.target.style.display = 'none'; }} />
                   <label className="absolute bottom-2 right-2 cursor-pointer bg-navy text-gold text-xs font-bold px-3 py-1 rounded-lg hover:bg-navy-light transition-colors print:hidden">
@@ -402,7 +402,7 @@ export default function AdminPage() {
                     <div className="flex gap-1 overflow-x-auto">
                       {product.images.map(img => (
                         <div key={img.id} className="relative flex-shrink-0 w-14 h-14">
-                          <img src={img.image_url} alt="" className="w-full h-full object-cover rounded" />
+                          <img src={imageUrl(img.image_url)} alt="" className="w-full h-full object-cover rounded" />
                           <button onClick={() => handleGalleryDelete(product, img.id)}
                             className="absolute -top-1 -right-1 bg-red-500 text-white w-4 h-4 rounded-full text-xs leading-none flex items-center justify-center hover:bg-red-600">&times;</button>
                         </div>

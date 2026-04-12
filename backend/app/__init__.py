@@ -1,5 +1,6 @@
 import logging
-from flask import Flask
+import os
+from flask import Flask, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_mail import Mail
@@ -45,6 +46,13 @@ def create_app():
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         return response
+
+    # Servir imágenes subidas desde /Images/
+    @app.route('/Images/<path:filename>')
+    def serve_image(filename):
+        upload_folder = app.config.get('UPLOAD_FOLDER')
+        os.makedirs(upload_folder, exist_ok=True)
+        return send_from_directory(upload_folder, filename)
 
     # Registrar blueprints (grupos de rutas)
     from app.routes import auth_bp, products_bp, chatbot_bp

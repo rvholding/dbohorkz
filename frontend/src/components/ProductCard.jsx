@@ -1,4 +1,5 @@
 import React from 'react';
+import { imageUrl } from '../services/api';
 
 export default function ProductCard({ product, onVerMas }) {
   const { id, name, image_url, description, price, codigo, categoria } = product;
@@ -12,7 +13,7 @@ export default function ProductCard({ product, onVerMas }) {
         onClick={() => onVerMas(product)}
       >
         {image_url
-          ? <img src={image_url} alt={name} className="object-contain h-44 w-full" />
+          ? <img src={imageUrl(image_url)} alt={name} className="object-contain h-44 w-full" />
           : (
             <div className="flex flex-col items-center gap-2 text-gray-300">
               <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">

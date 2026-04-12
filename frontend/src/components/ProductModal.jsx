@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { productosAPI } from '../services/api';
+import { productosAPI, imageUrl } from '../services/api';
 
 export default function ProductModal({ product, onClose }) {
   const [images, setImages] = useState([]);
@@ -49,7 +49,7 @@ export default function ProductModal({ product, onClose }) {
           ) : images.length > 0 ? (
             <>
               <img
-                src={images[current]?.image_url}
+                src={imageUrl(images[current]?.image_url)}
                 alt={`${product.name} - foto ${current + 1}`}
                 className="w-full h-80 sm:h-96 object-contain"
               />
@@ -73,7 +73,7 @@ export default function ProductModal({ product, onClose }) {
             {images.map((img, i) => (
               <button key={i} onClick={() => setCurrent(i)}
                 className={`w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 ${i === current ? 'border-gold' : 'border-transparent opacity-60 hover:opacity-100'}`}>
-                <img src={img.image_url} alt="" className="w-full h-full object-cover" />
+                <img src={imageUrl(img.image_url)} alt="" className="w-full h-full object-cover" />
               </button>
             ))}
           </div>
