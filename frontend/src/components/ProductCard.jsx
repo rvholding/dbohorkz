@@ -1,8 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { imageUrl } from '../services/api';
+import { useCart } from '../context/CartContext';
 
 export default function ProductCard({ product, onVerMas }) {
   const { id, name, image_url, description, price, codigo, categoria } = product;
+  const { addItem } = useCart();
+  const [added, setAdded] = useState(false);
+
+  function handleAdd() {
+    addItem(product);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-md p-4 flex flex-col border border-gray-100 hover:-translate-y-1 hover:shadow-xl transition-all duration-200">
@@ -51,13 +60,23 @@ export default function ProductCard({ product, onVerMas }) {
         </span>
       </div>
 
-      {/* Botón Ver más */}
-      <button
-        onClick={() => onVerMas(product)}
-        className="w-full bg-navy text-white py-2 rounded-lg font-semibold text-sm uppercase tracking-wide hover:bg-gold hover:text-navy transition-colors duration-200"
-      >
-        Ver más
-      </button>
+      {/* Botones */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => onVerMas(product)}
+          className="flex-1 bg-navy text-white py-2 rounded-lg font-semibold text-sm uppercase tracking-wide hover:bg-navy/80 transition-colors duration-200"
+        >
+          Ver más
+        </button>
+        <button
+          onClick={handleAdd}
+          className={`flex-1 py-2 rounded-lg font-semibold text-sm uppercase tracking-wide transition-colors duration-200 ${
+            added ? 'bg-green-600 text-white' : 'bg-gold text-navy hover:bg-gold/80'
+          }`}
+        >
+          {added ? 'Agregado' : 'Agregar'}
+        </button>
+      </div>
 
     </div>
   );

@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { productosAPI, imageUrl } from '../services/api';
+import { useCart } from '../context/CartContext';
 
 export default function ProductModal({ product, onClose }) {
   const [images, setImages] = useState([]);
   const [current, setCurrent] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [added, setAdded] = useState(false);
+  const { addItem } = useCart();
+
+  function handleAdd() {
+    addItem(product);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  }
 
   useEffect(() => {
     productosAPI.getImages(product.id)
@@ -88,6 +97,14 @@ export default function ProductModal({ product, onClose }) {
           <p className="text-gold-dark font-bold text-2xl">
             ${typeof product.price === 'number' ? product.price.toLocaleString('es-CO') : product.price}
           </p>
+          <button
+            onClick={handleAdd}
+            className={`block w-full py-3 rounded-lg font-semibold transition-colors text-center ${
+              added ? 'bg-green-600 text-white' : 'bg-gold text-navy hover:bg-gold/80'
+            }`}
+          >
+            {added ? 'Agregado al carrito' : 'Agregar al carrito'}
+          </button>
           <a
             href={`https://wa.me/573142187098?text=Hola, me interesa el producto: ${encodeURIComponent(product.name)}`}
             target="_blank"
