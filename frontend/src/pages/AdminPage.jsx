@@ -58,6 +58,8 @@ export default function AdminPage() {
         const initial = {};
         res.data.products.forEach(p => {
           initial[p.id] = {
+            name: p.name || '',
+            description: p.description || '',
             price: p.price,
             stock: p.stock,
             codigo: p.codigo || '',
@@ -99,6 +101,8 @@ export default function AdminPage() {
     setSaving(prev => ({ ...prev, [product.id]: true }));
     try {
       await productosAPI.update(product.id, {
+        name: edits[product.id].name,
+        description: edits[product.id].description,
         price: parseFloat(edits[product.id].price),
         stock: parseInt(edits[product.id].stock, 10),
         codigo: edits[product.id].codigo,
@@ -539,12 +543,32 @@ export default function AdminPage() {
                   )}
                 </div>
 
-                {/* Nombre y código */}
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-navy text-sm leading-tight">{product.name}</h3>
+                {/* ID badge */}
+                <div className="flex items-center justify-end print:hidden">
                   <span className="text-xs font-mono bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
-                    {edits[product.id]?.codigo || `#${String(product.id).padStart(4,'0')}`}
+                    ID #{String(product.id).padStart(4,'0')}
                   </span>
+                </div>
+
+                {/* Nombre */}
+                <div className="print:hidden">
+                  <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Nombre</label>
+                  <input type="text"
+                    value={edits[product.id]?.name ?? ''}
+                    onChange={e => handleEdit(product.id, 'name', e.target.value)}
+                    className="w-full mt-1 border border-gray-300 rounded px-2 py-1 text-sm font-bold text-navy focus:outline-none focus:ring-2 focus:ring-gold" />
+                </div>
+
+                {/* Nombre solo impresión */}
+                <h3 className="hidden print:block font-bold text-navy text-sm leading-tight">{product.name}</h3>
+
+                {/* Descripción */}
+                <div className="print:hidden">
+                  <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Descripción</label>
+                  <textarea rows={2}
+                    value={edits[product.id]?.description ?? ''}
+                    onChange={e => handleEdit(product.id, 'description', e.target.value)}
+                    className="w-full mt-1 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
                 </div>
 
                 {/* Código */}
