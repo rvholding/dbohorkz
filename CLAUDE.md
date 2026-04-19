@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-E-commerce application for "Uniformes Penitenciarios" with an AI chatbot and WhatsApp integration. Three-service architecture:
+E-commerce application for "Uniformes Penitenciarios" (INPEC uniforms store) with chatbot, WhatsApp integration, shopping cart, and order management. Three-service architecture:
 
 - **Backend**: Flask REST API (Python) — port 5000
 - **Frontend**: React SPA (JavaScript) — port 3000
@@ -46,48 +46,79 @@ docker-compose -f docker-compose.dev.yml up  # Development
 
 ### Data Flow
 ```
-WhatsApp User → whatsapp-service (Node.js) → backend (Flask) → SQLite DB
-Web User      → frontend (React)           → backend (Flask) → SQLite DB
+WhatsApp User → whatsapp-service (Node.js) → backend (Flask) → PostgreSQL
+Web User      → frontend (React)           → backend (Flask) → PostgreSQL
+Cart checkout → POST /api/orders           → DB + WhatsApp message
 ```
 
 ### Backend (`backend/app/`)
-- **Factory pattern**: `app/__init__.py` creates Flask app, initializes SQLAlchemy, registers blueprints
-- **Models**: `User`, `Product`, `ChatMessage` (in `models/`)
-- **Routes/Blueprints**: `auth` (`/api/auth/`), `products` (`/api/products/`), `chatbot` (`/api/chatbot/`)
-- **Services**: `ChatbotService` — FAQ keyword-matching chatbot; optional OpenAI integration via `OPENAI_API_KEY`
-- **Database**: SQLite by default; set `DATABASE_URL` env var for PostgreSQL in production
+- **Factory pattern**: `app/__init__.py` creates Flask app, initializes extensions (SQLAlchemy, CORS, Mail, Limiter), registers blueprints, serves `/Images/` static files
+- **Models**: `User`, `Product`, `ProductImage`, `ChatMessage`, `Order`, `OrderItem` (in `models/`)
+- **Routes/Blueprints**:
+  - `auth` (`/api/auth/`) — register, login with JWT
+  - `products` (`/api/products/`) — CRUD + image upload (Cloudinary or local) + gallery
+  - `chatbot` (`/api/chatbot/`) — FAQ bot + email notification via Resend
+  - `orders` (`/api/orders/`) — create order (public), list/update (admin)
+- **Auth middleware**: `@require_auth` (JWT validation), `@require_admin` (JWT + username check against `ADMIN_USERNAME`)
+- **Image upload**: Validates extension + magic bytes + size (5MB max). Uses Cloudinary if configured, otherwise local filesystem
+- **Database**: SQLite locally; PostgreSQL on Railway (auto-converts `postgres://` to `postgresql://`)
 
 ### Frontend (`frontend/src/`)
-- Single page: `pages/Home.jsx` composes all sections
-- Components: `Header`, `HeroSection`, `ProductsSection`, `ProductCard`, `Footer`
-- Tailwind CSS via craco (configured in `craco.config.js`)
-- Product data is currently hardcoded in `ProductsSection.jsx` — not yet fetched from API
+- **Router** (`App.jsx`): `/` → Home, `/admin` → AdminPage. Wrapped in `CartProvider`
+- **Home page** (`pages/Home.jsx`): composes Header → HeroSection → CarruselDestacados → ProductsSection → NosotrosSection → ContactoSection → Footer
+- **ProductsSection**: Sidebar accordion (categories) + product grid. Uses `ProductCard` with "Ver más" (opens `ProductModal`) and "Agregar" (adds to cart)
+- **Cart** (`context/CartContext.jsx`): React Context for cart state. `checkoutWhatsApp()` creates order via API then opens WhatsApp with order number
+- **CartDrawer**: Slide-out panel with items, qty controls, customer name/phone fields, WhatsApp checkout button
+- **AdminPage** (`pages/AdminPage.jsx`): Two tabs — "Productos" (CRUD + gallery upload) and "Pedidos" (list + status management)
+- **API client** (`services/api.js`): Axios instance with JWT interceptor. Exports `productosAPI`, `authAPI`, `chatbotAPI`, `ordersAPI`, `imageUrl()` helper
+- **Image URL resolution** (`imageUrl()`): URLs starting with `http` pass through; UUID filenames route to Railway; others stay relative (served by Cloudflare Pages)
+- **Tailwind CSS** via craco (`craco.config.js`)
 
 ### WhatsApp Service (`whatsapp-service/`)
 - `server.js`: WhatsApp Web client (via `whatsapp-web.js`) + Express API
 - Uses `LocalAuth` to persist session in `.wwebjs_auth/`
-- On first run, displays QR code in terminal for phone authentication
+- QR code available at `GET /api/qr` (web page with auto-refresh)
 - Forwards incoming messages to Flask `/api/chatbot/message` and replies with response
-- REST endpoints: `GET /api/health`, `GET /api/info`, `POST /api/send-message`
+- REST endpoints: `GET /api/health`, `GET /api/info`, `GET /api/qr`, `POST /api/send-message`
+
+## Order System
+
+Orders are created when a customer clicks "Enviar pedido por WhatsApp" in the cart:
+1. `POST /api/orders/` creates the order with a unique number (format: `PED-YYYYMMDD-XXXX`)
+2. The order number is shown in the cart confirmation
+3. WhatsApp message includes the order number for reference
+4. Admin can view and manage orders in `/admin` → Pedidos tab
+5. Status flow: pendiente → confirmado → enviado → entregado (or cancelado)
 
 ## Known Issues / TODOs
-- Password hashing is not implemented in `backend/app/routes/auth.py:22`
-- No authentication middleware protecting routes
-- Chatbot is FAQ-based only; OpenAI integration is prepared but not wired in
+- Chatbot is FAQ-based only; OpenAI integration is prepared but not wired in (`OPENAI_API_KEY` read but unused)
+- Images uploaded via admin go to Cloudinary (permanent). Original images committed in `frontend/public/Images/` are served by Cloudflare Pages
 
 ## Environment Variables
 
-**Backend** (`.env` in `backend/`):
-- `DATABASE_URL` — PostgreSQL URL (optional, falls back to SQLite)
-- `SECRET_KEY` — Flask secret
-- `OPENAI_API_KEY` — Optional, for AI chatbot
-- `CORS_ORIGINS` — Allowed origins (default: `http://localhost:3000`)
+**Backend** (`.env` in `backend/` or Railway variables):
+- `DATABASE_URL` — PostgreSQL URL (falls back to SQLite)
+- `SECRET_KEY` / `JWT_SECRET_KEY` — Flask + JWT secrets (auto-generated if missing, but not persistent across restarts)
+- `CORS_ORIGINS` — Comma-separated allowed origins (default: `http://localhost:3000`)
+- `ADMIN_USERNAME` — Username for admin access (default: `admin`)
+- `RESEND_API_KEY` — For email notifications
+- `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` — Image storage
+- `OPENAI_API_KEY` — Optional, for AI chatbot (not active)
+
+**Frontend** (`.env.production` in `frontend/` or Cloudflare Pages variables):
+- `REACT_APP_API_URL` — Backend URL (default: `https://dbohorkz-production.up.railway.app`)
 
 **WhatsApp Service** (`.env` in `whatsapp-service/`):
 - `FLASK_API_URL` — Backend URL (default: `http://localhost:5000`)
 - `TYPING_DELAY` — Simulated typing delay in ms
 
 ## Deployment
-- **Frontend**: Netlify (`frontend/public/_redirects` configures SPA rewrites) — dominio: dbohorkz.com
+- **Frontend**: Cloudflare Pages — dominio: dbohorkz.com (build: `cd frontend && npm install && npm run build`, output: `frontend/build`)
 - **Backend**: Railway — `dbohorkz-production.up.railway.app`
-- **WhatsApp Service**: Railway (servicio separado) — ver `RAILWAY_SETUP.md`
+- **WhatsApp Service**: Railway (separate service) — `whatsapp-services-production-f4d5.up.railway.app`
+- **Images**: Original product images served from Cloudflare Pages (`/Images/`). New uploads stored in Cloudinary
+
+### Cloudflare Pages Notes
+- Deploys sometimes show as "Skipped" — use "Retry deployment" from the 3-dot menu
+- `REACT_APP_API_URL` must be set in Cloudflare Pages environment variables (not just `.env.production`)
+- The `_redirects` file in `frontend/public/` handles SPA routing

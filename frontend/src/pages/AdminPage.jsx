@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { authAPI, productosAPI, ordersAPI, testimonialsAPI, imageUrl } from '../services/api';
+import CatalogoTab from '../components/admin/CatalogoTab';
+import ClientesTab from '../components/admin/ClientesTab';
 
 const CATEGORIAS_LISTA = ['Uniformes y Vestimenta','Uniforme #3','Gorras','Chapuzas','Linternas','Bolsos','Presillas','Correaje y Cinturones','Portatiles y Fundas','Insignias y Bordados','Defensa y Seguridad','Equipos y Accesorios','Elementos para Curso'];
 const EMPTY_PRODUCT = { name: '', description: '', price: '', stock: '', image_url: '', codigo: '', categoria: '', sizes: '', colors: '' };
@@ -351,6 +353,14 @@ export default function AdminPage() {
             className={`px-6 py-3 font-bold text-sm uppercase tracking-wide border-b-2 transition-colors ${activeTab === 'testimonios' ? 'border-gold text-navy' : 'border-transparent text-gray-400 hover:text-navy'}`}>
             Testimonios ({testimonials.length})
           </button>
+          <button onClick={() => setActiveTab('catalogo')}
+            className={`px-6 py-3 font-bold text-sm uppercase tracking-wide border-b-2 transition-colors ${activeTab === 'catalogo' ? 'border-gold text-navy' : 'border-transparent text-gray-400 hover:text-navy'}`}>
+            Catálogo Preferencial
+          </button>
+          <button onClick={() => setActiveTab('clientes')}
+            className={`px-6 py-3 font-bold text-sm uppercase tracking-wide border-b-2 transition-colors ${activeTab === 'clientes' ? 'border-gold text-navy' : 'border-transparent text-gray-400 hover:text-navy'}`}>
+            Clientes
+          </button>
         </div>
       </div>
 
@@ -373,6 +383,12 @@ export default function AdminPage() {
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                       <div>
                         <span className="font-bold text-navy text-lg">{order.order_number}</span>
+                        {order.source === 'preferencial' && (
+                          <span className="ml-2 text-xs bg-gold/20 text-gold-dark font-bold px-2 py-0.5 rounded-full">PREFERENCIAL</span>
+                        )}
+                        {order.contingente && (
+                          <span className="ml-2 text-xs bg-navy/10 text-navy font-bold px-2 py-0.5 rounded-full">Cont. {order.contingente}</span>
+                        )}
                         <span className="ml-3 text-xs text-gray-400">{new Date(order.created_at).toLocaleString('es-CO')}</span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -466,6 +482,12 @@ export default function AdminPage() {
             )}
           </div>
         )}
+
+        {/* ═══ PESTAÑA CATÁLOGO PREFERENCIAL ═══ */}
+        {activeTab === 'catalogo' && <CatalogoTab showMensaje={showMensaje} />}
+
+        {/* ═══ PESTAÑA CLIENTES ═══ */}
+        {activeTab === 'clientes' && <ClientesTab showMensaje={showMensaje} />}
 
         {/* ═══ PESTAÑA PRODUCTOS ═══ */}
         {activeTab === 'productos' && <>

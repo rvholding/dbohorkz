@@ -1,8 +1,9 @@
-from flask import request, jsonify
+from flask import request, jsonify, g
 from app.routes import orders_bp
 from app import db
 from app.models import Order, OrderItem
 from app.auth_middleware import require_admin
+from app.routes.customers import require_customer
 
 
 @orders_bp.route('/', methods=['POST'])
@@ -68,6 +69,62 @@ def list_orders():
         'page': pagination.page,
         'pages': pagination.pages,
     }), 200
+
+
+@orders_bp.route('/preferencial', methods=['POST'])
+@require_customer
+def create_preferencial_order():
+    """Crea un pedido desde el portal /cliente (cliente preferencial autenticado)."""
+    data = request.get_json()
+    customer = g.current_customer
+
+    if not data or 'items' not in data or len(data['items']) == 0:
+        return jsonify({'error': 'El pedido debe tener al menos un producto'}), 400
+
+    order = Order(
+        order_number=Order.generate_number(),
+        customer_name=f"{customer.apellidos} {customer.nombres}".strip(),
+        customer_phone=customer.celular,
+        customer_id=customer.id,
+        contingente=str(data.get('contingente', ''))[:50],
+        source='preferencial',
+        total=0,
+        notes=str(data.get('notes', '')),
+    )
+
+    total = 0
+    for item_data in data['items']:
+        if 'product_name' not in item_data or 'price' not in item_data or 'qty' not in item_data:
+            continue
+        qty = int(item_data['qty'])
+        if qty < 1:
+            continue
+        # El frontend envía el precio final con todos los modificadores aplicados
+        # y un resumen de las opciones en product_name (ej: "Buso INPEC - S, Gris, cremallera")
+        item = OrderItem(
+            product_id=None,
+            product_name=str(item_data['product_name'])[:255],
+            price=float(item_data['price']),
+            qty=qty,
+            size=str(item_data.get('size', ''))[:50],
+            color=str(item_data.get('color', ''))[:50],
+        )
+        order.items.append(item)
+        total += item.price * qty
+
+    if total == 0:
+        return jsonify({'error': 'El pedido está vacío'}), 400
+
+    order.total = total
+
+    try:
+        db.session.add(order)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Error al crear el pedido'}), 500
+
+    return jsonify({'message': 'Pedido creado', 'order': order.to_dict()}), 201
 
 
 @orders_bp.route('/<int:order_id>', methods=['PUT'])

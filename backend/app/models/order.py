@@ -14,6 +14,9 @@ class Order(db.Model):
     total       = db.Column(db.Float, nullable=False)
     status      = db.Column(db.String(20), default='pendiente')  # pendiente, confirmado, enviado, entregado, cancelado
     notes       = db.Column(db.Text, default='')
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=True)
+    contingente = db.Column(db.String(50), default='')
+    source      = db.Column(db.String(20), default='web')  # web | preferencial
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
     items       = db.relationship('OrderItem', backref='order', lazy=True, cascade='all, delete-orphan')
 
@@ -29,6 +32,9 @@ class Order(db.Model):
             'order_number': self.order_number,
             'customer_name': self.customer_name,
             'customer_phone': self.customer_phone,
+            'customer_id': self.customer_id,
+            'contingente': self.contingente or '',
+            'source': self.source or 'web',
             'total': self.total,
             'status': self.status,
             'notes': self.notes,

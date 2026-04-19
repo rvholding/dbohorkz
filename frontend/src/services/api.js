@@ -6,9 +6,13 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Interceptor: adjunta el token JWT a cada request si el admin está logueado
+// Interceptor: adjunta el token JWT a cada request.
+// En /cliente* usa el token del cliente preferencial; en el resto usa el del admin.
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const isClientePath = typeof window !== 'undefined' && window.location.pathname.startsWith('/cliente');
+  const token = isClientePath
+    ? (localStorage.getItem('customerToken') || localStorage.getItem('token'))
+    : localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -63,6 +67,32 @@ export const ordersAPI = {
   getAll: (page = 1, perPage = 20, status = '') =>
     api.get('/api/orders/', { params: { page, per_page: perPage, status } }),
   update: (id, data) => api.put(`/api/orders/${id}`, data),
+};
+
+// ─── API de Clientes Preferenciales ───────────────────────────────────────────
+export const customerAuthAPI = {
+  login: (data) => api.post('/api/customers/login', data),
+  me:    () => api.get('/api/customers/me'),
+};
+
+export const customersAPI = {
+  getAll: () => api.get('/api/customers/'),
+  create: (data) => api.post('/api/customers/', data),
+  update: (id, data) => api.put(`/api/customers/${id}`, data),
+  remove: (id) => api.delete(`/api/customers/${id}`),
+};
+
+// ─── API de Catálogo Preferencial ─────────────────────────────────────────────
+export const catalogAPI = {
+  list:       () => api.get('/api/catalog/'),          // cliente
+  listAdmin:  () => api.get('/api/catalog/admin'),     // admin
+  create:     (data) => api.post('/api/catalog/', data),
+  update:     (id, data) => api.put(`/api/catalog/${id}`, data),
+  remove:     (id) => api.delete(`/api/catalog/${id}`),
+};
+
+export const preferencialOrdersAPI = {
+  create: (data) => api.post('/api/orders/preferencial', data),
 };
 
 // ─── API de Testimonios ───────────────────────────────────────────────────────

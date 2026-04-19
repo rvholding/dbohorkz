@@ -55,12 +55,14 @@ def create_app():
         return send_from_directory(upload_folder, filename)
 
     # Registrar blueprints (grupos de rutas)
-    from app.routes import auth_bp, products_bp, chatbot_bp, orders_bp, testimonials_bp
+    from app.routes import auth_bp, products_bp, chatbot_bp, orders_bp, testimonials_bp, customers_bp, catalog_bp
     app.register_blueprint(auth_bp)          # /api/auth/
     app.register_blueprint(products_bp)      # /api/products/
     app.register_blueprint(chatbot_bp)       # /api/chatbot/
     app.register_blueprint(orders_bp)        # /api/orders/
     app.register_blueprint(testimonials_bp)  # /api/testimonials/
+    app.register_blueprint(customers_bp)     # /api/customers/
+    app.register_blueprint(catalog_bp)       # /api/catalog/
 
     # Crear tablas si no existen y agregar columnas nuevas a tablas existentes
     with app.app_context():
@@ -82,6 +84,9 @@ def _run_migrations():
         ('products', 'colors', "VARCHAR(500) DEFAULT ''"),
         ('order_items', 'size', "VARCHAR(50) DEFAULT ''"),
         ('order_items', 'color', "VARCHAR(50) DEFAULT ''"),
+        ('orders', 'customer_id', "INTEGER"),
+        ('orders', 'contingente', "VARCHAR(50) DEFAULT ''"),
+        ('orders', 'source', "VARCHAR(20) DEFAULT 'web'"),
     ]
 
     for table, column, col_type in migrations:
