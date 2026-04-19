@@ -31,10 +31,10 @@ export default function Header() {
 
         {/* Nav desktop */}
         <nav className="hidden md:flex items-center space-x-8">
-          {['Inicio', 'Productos', 'Nosotros', 'Contacto'].map((item) => (
+          {['Inicio', 'Productos', 'Nosotros', 'Calificar', 'Contacto'].map((item) => (
             <a
               key={item}
-              href={item === 'Inicio' ? '/' : `#${item.toLowerCase()}`}
+              href={item === 'Inicio' ? '/' : item === 'Calificar' ? '#testimonios' : `#${item.toLowerCase()}`}
               className="text-white hover:text-gold font-medium transition-colors duration-200 text-sm tracking-wide uppercase"
             >
               {item}
@@ -84,10 +84,10 @@ export default function Header() {
       {/* Nav mobile */}
       {menuOpen && (
         <div className="md:hidden bg-navy-light px-6 pb-4 space-y-3">
-          {['Inicio', 'Productos', 'Nosotros', 'Contacto'].map((item) => (
+          {['Inicio', 'Productos', 'Nosotros', 'Calificar', 'Contacto'].map((item) => (
             <a
               key={item}
-              href={item === 'Inicio' ? '/' : `#${item.toLowerCase()}`}
+              href={item === 'Inicio' ? '/' : item === 'Calificar' ? '#testimonios' : `#${item.toLowerCase()}`}
               className="block text-white hover:text-gold font-medium transition uppercase text-sm tracking-wide"
               onClick={() => setMenuOpen(false)}
             >
