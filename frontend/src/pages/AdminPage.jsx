@@ -26,9 +26,6 @@ export default function AdminPage() {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [testimonials, setTestimonials] = useState([]);
   const [testimonialsLoading, setTestimonialsLoading] = useState(false);
-  const [newTestimonial, setNewTestimonial] = useState({ customer_name: '', rating: 5, comment: '', image_url: '', active: true });
-  const [newTestimonialImage, setNewTestimonialImage] = useState(null);
-  const [savingTestimonial, setSavingTestimonial] = useState(false);
 
   useEffect(() => {
     if (token) loadProducts();
@@ -44,25 +41,6 @@ export default function AdminPage() {
     testimonialsAPI.getAll(true)
       .then(res => setTestimonials(res.data.testimonials || []))
       .finally(() => setTestimonialsLoading(false));
-  }
-
-  async function handleCreateTestimonial(e) {
-    e.preventDefault();
-    if (!newTestimonial.customer_name) return;
-    setSavingTestimonial(true);
-    try {
-      let image_url = newTestimonial.image_url;
-      if (newTestimonialImage) image_url = await uploadImage(newTestimonialImage);
-      await testimonialsAPI.create({ ...newTestimonial, image_url });
-      showMensaje('Testimonio agregado');
-      setNewTestimonial({ customer_name: '', rating: 5, comment: '', image_url: '', active: true });
-      setNewTestimonialImage(null);
-      loadTestimonials();
-    } catch (err) {
-      showMensaje(err.message || 'Error al guardar testimonio', true);
-    } finally {
-      setSavingTestimonial(false);
-    }
   }
 
   async function toggleTestimonialActive(t) {
