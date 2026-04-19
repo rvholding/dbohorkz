@@ -4,6 +4,7 @@ import HeroSection from '../components/HeroSection';
 import CarruselDestacados from '../components/CarruselDestacados';
 import ProductsSection from '../components/ProductsSection';
 import NosotrosSection from '../components/NosotrosSection';
+import TestimoniosSection from '../components/TestimoniosSection';
 import ContactoSection from '../components/ContactoSection';
 import Footer from '../components/Footer';
 import WhatsAppButton from '../components/WhatsAppButton';
@@ -23,6 +24,7 @@ export default function Home() {
         <CarruselDestacados />
         <ProductsSection />
         <NosotrosSection />
+        <TestimoniosSection />
         <ContactoSection />
       </main>
       <Footer />

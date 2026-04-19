@@ -65,6 +65,15 @@ export const ordersAPI = {
   update: (id, data) => api.put(`/api/orders/${id}`, data),
 };
 
+// ─── API de Testimonios ───────────────────────────────────────────────────────
+export const testimonialsAPI = {
+  getAll: (includeInactive = false) =>
+    api.get('/api/testimonials/', { params: includeInactive ? { all: 1 } : {} }),
+  create: (data) => api.post('/api/testimonials/', data),
+  update: (id, data) => api.put(`/api/testimonials/${id}`, data),
+  remove: (id) => api.delete(`/api/testimonials/${id}`),
+};
+
 // Helper: resuelve URL de imagen.
 // Imágenes con UUID (subidas via admin) se cargan desde Railway.
 // Imágenes originales (nombres descriptivos) se cargan desde Cloudflare Pages.
