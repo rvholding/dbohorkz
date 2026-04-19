@@ -61,9 +61,36 @@ def create_app():
     app.register_blueprint(chatbot_bp)    # /api/chatbot/
     app.register_blueprint(orders_bp)     # /api/orders/
 
-    # Crear tablas si no existen (SQLite o PostgreSQL según DATABASE_URL)
+    # Crear tablas si no existen y agregar columnas nuevas a tablas existentes
     with app.app_context():
         db.create_all()
+        _run_migrations()
 
     logger.info('App creada correctamente')
     return app
+
+
+def _run_migrations():
+    """Agrega columnas nuevas a tablas existentes si no existen (PostgreSQL + SQLite)."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+
+    migrations = [
+        ('products', 'sizes', "VARCHAR(500) DEFAULT ''"),
+        ('products', 'colors', "VARCHAR(500) DEFAULT ''"),
+        ('order_items', 'size', "VARCHAR(50) DEFAULT ''"),
+        ('order_items', 'color', "VARCHAR(50) DEFAULT ''"),
+    ]
+
+    for table, column, col_type in migrations:
+        if not inspector.has_table(table):
+            continue
+        existing_cols = [c['name'] for c in inspector.get_columns(table)]
+        if column not in existing_cols:
+            try:
+                with db.engine.begin() as conn:
+                    conn.execute(text(f'ALTER TABLE {table} ADD COLUMN {column} {col_type}'))
+                logger.info(f'Migración: agregada columna {column} a {table}')
+            except Exception as e:
+                logger.warning(f'No se pudo agregar {column} a {table}: {e}')

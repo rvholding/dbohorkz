@@ -46,6 +46,8 @@ class OrderItem(db.Model):
     product_name = db.Column(db.String(255), nullable=False)
     price       = db.Column(db.Float, nullable=False)
     qty         = db.Column(db.Integer, nullable=False)
+    size        = db.Column(db.String(50), default='')
+    color       = db.Column(db.String(50), default='')
 
     def to_dict(self):
         return {
@@ -54,5 +56,7 @@ class OrderItem(db.Model):
             'product_name': self.product_name,
             'price': self.price,
             'qty': self.qty,
+            'size': self.size or '',
+            'color': self.color or '',
             'subtotal': self.price * self.qty,
         }

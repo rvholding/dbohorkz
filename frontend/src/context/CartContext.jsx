@@ -9,30 +9,46 @@ export function useCart() {
 
 const fmt = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n);
 
+// Clave única por variante (mismo producto con talla/color diferente = item separado)
+const variantKey = (id, size = '', color = '') => `${id}-${size}-${color}`;
+
 export function CartProvider({ children }) {
   const [items, setItems] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [orderNumber, setOrderNumber] = useState(null);
   const [checkingOut, setCheckingOut] = useState(false);
 
-  const addItem = useCallback((product) => {
+  const addItem = useCallback((product, variant = {}) => {
+    const size = variant.size || '';
+    const color = variant.color || '';
+    const key = variantKey(product.id, size, color);
+
     setOrderNumber(null);
     setItems(prev => {
-      const existing = prev.find(i => i.id === product.id);
+      const existing = prev.find(i => i.key === key);
       if (existing) {
-        return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i);
+        return prev.map(i => i.key === key ? { ...i, qty: i.qty + 1 } : i);
       }
-      return [...prev, { id: product.id, name: product.name, price: product.price, image_url: product.image_url, qty: 1 }];
+      return [...prev, {
+        key,
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image_url: product.image_url,
+        size,
+        color,
+        qty: 1,
+      }];
     });
   }, []);
 
-  const removeItem = useCallback((productId) => {
-    setItems(prev => prev.filter(i => i.id !== productId));
+  const removeItem = useCallback((key) => {
+    setItems(prev => prev.filter(i => i.key !== key));
   }, []);
 
-  const updateQty = useCallback((productId, qty) => {
-    if (qty < 1) return removeItem(productId);
-    setItems(prev => prev.map(i => i.id === productId ? { ...i, qty } : i));
+  const updateQty = useCallback((key, qty) => {
+    if (qty < 1) return removeItem(key);
+    setItems(prev => prev.map(i => i.key === key ? { ...i, qty } : i));
   }, [removeItem]);
 
   const clearCart = useCallback(() => {
@@ -50,8 +66,14 @@ export function CartProvider({ children }) {
     if (items.length === 0 || checkingOut) return;
     setCheckingOut(true);
 
+    const variantLabel = (item) => {
+      const parts = [];
+      if (item.size) parts.push(`Talla ${item.size}`);
+      if (item.color) parts.push(`Color ${item.color}`);
+      return parts.length ? ` (${parts.join(', ')})` : '';
+    };
+
     try {
-      // Crear pedido en la base de datos
       const res = await ordersAPI.create({
         customer_name: customerName || '',
         customer_phone: customerPhone || '',
@@ -60,19 +82,20 @@ export function CartProvider({ children }) {
           product_name: i.name,
           price: i.price,
           qty: i.qty,
+          size: i.size,
+          color: i.color,
         })),
       });
 
       const order = res.data.order;
       setOrderNumber(order.order_number);
 
-      // Generar mensaje de WhatsApp con número de pedido
       let msg = `Hola, quiero hacer un pedido:\n\n`;
       msg += `*Pedido: ${order.order_number}*\n`;
       if (customerName) msg += `Nombre: ${customerName}\n`;
       msg += `\n`;
       items.forEach((item, i) => {
-        msg += `${i + 1}. ${item.name} x${item.qty} — ${fmt(item.price * item.qty)}\n`;
+        msg += `${i + 1}. ${item.name}${variantLabel(item)} x${item.qty} — ${fmt(item.price * item.qty)}\n`;
       });
       msg += `\n*Total: ${fmt(totalPrice)}*`;
       msg += '\n\nQuedo atento a la confirmación.';
@@ -80,10 +103,9 @@ export function CartProvider({ children }) {
       window.open(`https://wa.me/573142187098?text=${encodeURIComponent(msg)}`, '_blank');
       setItems([]);
     } catch {
-      // Si falla la API, enviar sin número de pedido
       let msg = 'Hola, quiero hacer un pedido:\n\n';
       items.forEach((item, i) => {
-        msg += `${i + 1}. ${item.name} x${item.qty} — ${fmt(item.price * item.qty)}\n`;
+        msg += `${i + 1}. ${item.name}${variantLabel(item)} x${item.qty} — ${fmt(item.price * item.qty)}\n`;
       });
       msg += `\n*Total: ${fmt(totalPrice)}*`;
       msg += '\n\nQuedo atento a la confirmación.';

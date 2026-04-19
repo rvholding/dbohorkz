@@ -53,7 +53,7 @@ export default function CartDrawer() {
           <div className="flex-1 overflow-y-auto p-4">
             <div className="space-y-3">
               {items.map(item => (
-                <div key={item.id} className="flex gap-3 bg-gray-50 rounded-xl p-3">
+                <div key={item.key} className="flex gap-3 bg-gray-50 rounded-xl p-3">
                   <div className="w-14 h-14 rounded-lg overflow-hidden bg-white border flex-shrink-0">
                     {item.image_url ? (
                       <img src={imageUrl(item.image_url)} alt={item.name} className="w-full h-full object-contain" />
@@ -64,18 +64,24 @@ export default function CartDrawer() {
 
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-navy text-sm truncate">{item.name}</h4>
-                    <p className="text-gold-dark font-bold text-sm">{fmt(item.price)}</p>
+                    {(item.size || item.color) && (
+                      <div className="flex gap-1 flex-wrap mt-0.5">
+                        {item.size && <span className="text-xs bg-navy/10 text-navy px-1.5 py-0.5 rounded">Talla: {item.size}</span>}
+                        {item.color && <span className="text-xs bg-navy/10 text-navy px-1.5 py-0.5 rounded">Color: {item.color}</span>}
+                      </div>
+                    )}
+                    <p className="text-gold-dark font-bold text-sm mt-0.5">{fmt(item.price)}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <button onClick={() => updateQty(item.id, item.qty - 1)}
+                      <button onClick={() => updateQty(item.key, item.qty - 1)}
                         className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-sm hover:bg-gray-100">−</button>
                       <span className="font-semibold text-sm w-6 text-center">{item.qty}</span>
-                      <button onClick={() => updateQty(item.id, item.qty + 1)}
+                      <button onClick={() => updateQty(item.key, item.qty + 1)}
                         className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-sm hover:bg-gray-100">+</button>
                     </div>
                   </div>
 
                   <div className="flex flex-col items-end justify-between">
-                    <button onClick={() => removeItem(item.id)} className="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
+                    <button onClick={() => removeItem(item.key)} className="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
                     <span className="text-navy font-bold text-sm">{fmt(item.price * item.qty)}</span>
                   </div>
                 </div>

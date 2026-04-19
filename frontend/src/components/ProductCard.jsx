@@ -3,11 +3,18 @@ import { imageUrl } from '../services/api';
 import { useCart } from '../context/CartContext';
 
 export default function ProductCard({ product, onVerMas }) {
-  const { id, name, image_url, description, price, codigo, categoria } = product;
+  const { id, name, image_url, description, price, codigo, categoria, sizes = [], colors = [] } = product;
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
 
+  const hasVariants = sizes.length > 0 || colors.length > 0;
+
   function handleAdd() {
+    // Si el producto tiene tallas o colores, abrir el modal para que el cliente elija
+    if (hasVariants) {
+      onVerMas(product);
+      return;
+    }
     addItem(product);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
@@ -74,7 +81,7 @@ export default function ProductCard({ product, onVerMas }) {
             added ? 'bg-green-600 text-white' : 'bg-gold text-navy hover:bg-gold/80'
           }`}
         >
-          {added ? 'Agregado' : 'Agregar'}
+          {added ? 'Agregado' : hasVariants ? 'Elegir' : 'Agregar'}
         </button>
       </div>
 

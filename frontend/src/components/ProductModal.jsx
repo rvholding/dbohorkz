@@ -7,10 +7,27 @@ export default function ProductModal({ product, onClose }) {
   const [current, setCurrent] = useState(0);
   const [loading, setLoading] = useState(true);
   const [added, setAdded] = useState(false);
+  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
+  const [validationError, setValidationError] = useState('');
   const { addItem } = useCart();
 
+  const sizes = product.sizes || [];
+  const colors = product.colors || [];
+  const hasSizes = sizes.length > 0;
+  const hasColors = colors.length > 0;
+
   function handleAdd() {
-    addItem(product);
+    if (hasSizes && !selectedSize) {
+      setValidationError('Selecciona una talla');
+      return;
+    }
+    if (hasColors && !selectedColor) {
+      setValidationError('Selecciona un color');
+      return;
+    }
+    setValidationError('');
+    addItem(product, { size: selectedSize, color: selectedColor });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   }
@@ -97,6 +114,55 @@ export default function ProductModal({ product, onClose }) {
           <p className="text-gold-dark font-bold text-2xl">
             ${typeof product.price === 'number' ? product.price.toLocaleString('es-CO') : product.price}
           </p>
+
+          {/* Selector de tallas */}
+          {hasSizes && (
+            <div>
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Talla</label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {sizes.map(size => (
+                  <button
+                    key={size}
+                    onClick={() => { setSelectedSize(size); setValidationError(''); }}
+                    className={`px-4 py-2 rounded-lg border-2 text-sm font-semibold transition-colors ${
+                      selectedSize === size
+                        ? 'bg-navy text-gold border-navy'
+                        : 'bg-white text-navy border-gray-300 hover:border-gold'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Selector de colores */}
+          {hasColors && (
+            <div>
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Color</label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {colors.map(color => (
+                  <button
+                    key={color}
+                    onClick={() => { setSelectedColor(color); setValidationError(''); }}
+                    className={`px-4 py-2 rounded-lg border-2 text-sm font-semibold transition-colors ${
+                      selectedColor === color
+                        ? 'bg-navy text-gold border-navy'
+                        : 'bg-white text-navy border-gray-300 hover:border-gold'
+                    }`}
+                  >
+                    {color}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {validationError && (
+            <p className="text-red-500 text-sm font-semibold">{validationError}</p>
+          )}
+
           <button
             onClick={handleAdd}
             className={`block w-full py-3 rounded-lg font-semibold transition-colors text-center ${

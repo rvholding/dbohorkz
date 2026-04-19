@@ -125,6 +125,8 @@ def create_product():
         image_url=str(data.get('image_url', ''))[:500],
         codigo=str(data.get('codigo', ''))[:50],
         categoria=str(data.get('categoria', ''))[:100],
+        sizes=str(data.get('sizes', ''))[:500],
+        colors=str(data.get('colors', ''))[:500],
     )
 
     try:
@@ -164,6 +166,10 @@ def update_product(product_id):
         product.codigo = str(data['codigo'])[:50]
     if 'categoria' in data:
         product.categoria = str(data['categoria'])[:100]
+    if 'sizes' in data:
+        product.sizes = str(data['sizes'])[:500]
+    if 'colors' in data:
+        product.colors = str(data['colors'])[:500]
 
     try:
         db.session.commit()

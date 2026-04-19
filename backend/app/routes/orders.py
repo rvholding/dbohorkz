@@ -30,6 +30,8 @@ def create_order():
             product_name=str(item_data['product_name'])[:255],
             price=float(item_data['price']),
             qty=int(item_data['qty']),
+            size=str(item_data.get('size', ''))[:50],
+            color=str(item_data.get('color', ''))[:50],
         )
         order.items.append(item)
         total += item.price * item.qty

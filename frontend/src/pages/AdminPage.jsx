@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { authAPI, productosAPI, ordersAPI, imageUrl } from '../services/api';
 
 const CATEGORIAS_LISTA = ['Uniformes y Vestimenta','Uniforme #3','Gorras','Chapuzas','Linternas','Bolsos','Presillas','Correaje y Cinturones','Portatiles y Fundas','Insignias y Bordados','Defensa y Seguridad','Equipos y Accesorios','Elementos para Curso'];
-const EMPTY_PRODUCT = { name: '', description: '', price: '', stock: '', image_url: '', codigo: '', categoria: '' };
+const EMPTY_PRODUCT = { name: '', description: '', price: '', stock: '', image_url: '', codigo: '', categoria: '', sizes: '', colors: '' };
 const fmt = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n);
 const API_URL = process.env.REACT_APP_API_URL || 'https://dbohorkz-production.up.railway.app';
 
@@ -57,7 +57,14 @@ export default function AdminPage() {
         setProducts(res.data.products);
         const initial = {};
         res.data.products.forEach(p => {
-          initial[p.id] = { price: p.price, stock: p.stock, codigo: p.codigo || '', categoria: p.categoria || '' };
+          initial[p.id] = {
+            price: p.price,
+            stock: p.stock,
+            codigo: p.codigo || '',
+            categoria: p.categoria || '',
+            sizes: (p.sizes || []).join(', '),
+            colors: (p.colors || []).join(', '),
+          };
         });
         setEdits(initial);
       })
@@ -96,6 +103,8 @@ export default function AdminPage() {
         stock: parseInt(edits[product.id].stock, 10),
         codigo: edits[product.id].codigo,
         categoria: edits[product.id].categoria,
+        sizes: edits[product.id].sizes || '',
+        colors: edits[product.id].colors || '',
       });
       showMensaje(`"${product.name}" actualizado`);
       loadProducts();
@@ -194,6 +203,8 @@ export default function AdminPage() {
         image_url,
         codigo: nuevoProducto.codigo,
         categoria: nuevoProducto.categoria,
+        sizes: nuevoProducto.sizes || '',
+        colors: nuevoProducto.colors || '',
       });
       showMensaje(`"${nuevoProducto.name}" creado exitosamente`);
       setNuevoProducto(EMPTY_PRODUCT);
@@ -348,7 +359,16 @@ export default function AdminPage() {
                     <div className="border-t pt-2 mt-2">
                       {order.items.map(item => (
                         <div key={item.id} className="flex justify-between text-sm py-1">
-                          <span className="text-gray-700">{item.product_name} <span className="text-gray-400">x{item.qty}</span></span>
+                          <span className="text-gray-700">
+                            {item.product_name}
+                            {(item.size || item.color) && (
+                              <span className="text-xs text-gray-500 ml-1">
+                                {item.size && ` · Talla ${item.size}`}
+                                {item.color && ` · Color ${item.color}`}
+                              </span>
+                            )}
+                            <span className="text-gray-400 ml-1">x{item.qty}</span>
+                          </span>
                           <span className="font-semibold text-navy">{fmt(item.subtotal)}</span>
                         </div>
                       ))}
@@ -430,6 +450,20 @@ export default function AdminPage() {
                       {CATEGORIAS_LISTA.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Tallas (opcional, separadas por coma)</label>
+                  <input type="text" value={nuevoProducto.sizes}
+                    onChange={e => setNuevoProducto(p => ({ ...p, sizes: e.target.value }))}
+                    placeholder="S, M, L, XL  o  38, 40, 42"
+                    className="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Colores (opcional, separados por coma)</label>
+                  <input type="text" value={nuevoProducto.colors}
+                    onChange={e => setNuevoProducto(p => ({ ...p, colors: e.target.value }))}
+                    placeholder="Negro, Azul, Verde"
+                    className="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Imagen</label>
@@ -533,6 +567,26 @@ export default function AdminPage() {
                     <option value="">Sin categoría</option>
                     {CATEGORIAS_LISTA.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
+                </div>
+
+                {/* Tallas */}
+                <div className="print:hidden">
+                  <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Tallas (separadas por coma)</label>
+                  <input type="text"
+                    value={edits[product.id]?.sizes ?? ''}
+                    onChange={e => handleEdit(product.id, 'sizes', e.target.value)}
+                    placeholder="S, M, L, XL  o  38, 40, 42"
+                    className="w-full mt-1 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
+                </div>
+
+                {/* Colores */}
+                <div className="print:hidden">
+                  <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Colores (separados por coma)</label>
+                  <input type="text"
+                    value={edits[product.id]?.colors ?? ''}
+                    onChange={e => handleEdit(product.id, 'colors', e.target.value)}
+                    placeholder="Negro, Azul, Verde"
+                    className="w-full mt-1 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
                 </div>
 
                 {/* Precio (editable en pantalla, solo lectura en impresión) */}
