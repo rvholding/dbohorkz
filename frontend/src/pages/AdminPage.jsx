@@ -440,88 +440,47 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ═══ PESTAÑA TESTIMONIOS ═══ */}
+        {/* ═══ PESTAÑA TESTIMONIOS (moderación) ═══ */}
         {activeTab === 'testimonios' && (
           <div>
-            <h2 className="text-2xl font-bold text-navy mb-6">Testimonios</h2>
+            <h2 className="text-2xl font-bold text-navy mb-2">Calificaciones de clientes</h2>
+            <p className="text-gray-500 text-sm mb-6">Los clientes dejan sus calificaciones desde la página. Desde aquí puedes ocultar comentarios inapropiados o eliminarlos.</p>
 
-            {/* Formulario nuevo testimonio */}
-            <form onSubmit={handleCreateTestimonial} className="bg-white rounded-xl shadow p-5 mb-6 space-y-3">
-              <h3 className="font-bold text-navy mb-2">Agregar nuevo testimonio</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-gray-600 uppercase">Nombre del cliente *</label>
-                  <input type="text" required value={newTestimonial.customer_name}
-                    onChange={e => setNewTestimonial(p => ({ ...p, customer_name: e.target.value }))}
-                    className="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-600 uppercase">Calificación</label>
-                  <div className="flex items-center gap-1 mt-2">
-                    {[1,2,3,4,5].map(n => (
-                      <button type="button" key={n}
-                        onClick={() => setNewTestimonial(p => ({ ...p, rating: n }))}
-                        className="focus:outline-none">
-                        <svg className={`w-7 h-7 ${n <= newTestimonial.rating ? 'text-gold' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-600 uppercase">Comentario (opcional)</label>
-                <textarea rows={2} value={newTestimonial.comment}
-                  onChange={e => setNewTestimonial(p => ({ ...p, comment: e.target.value }))}
-                  placeholder="Ej: Excelente servicio, entrega rápida..."
-                  className="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-600 uppercase">Imagen (felicitación o WhatsApp screenshot)</label>
-                <input type="file" accept="image/*"
-                  onChange={e => setNewTestimonialImage(e.target.files[0])}
-                  className="w-full mt-1 text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gold file:text-navy file:font-bold file:cursor-pointer" />
-              </div>
-              <button type="submit" disabled={savingTestimonial}
-                className="bg-gold text-navy font-bold px-6 py-2 rounded-lg hover:bg-gold/80 text-sm disabled:opacity-50">
-                {savingTestimonial ? 'Guardando...' : '+ Agregar testimonio'}
-              </button>
-            </form>
-
-            {/* Lista de testimonios */}
             {testimonialsLoading ? (
               <div className="flex justify-center py-12">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gold"></div>
               </div>
             ) : testimonials.length === 0 ? (
-              <p className="text-center text-gray-400 py-8">No hay testimonios aún</p>
+              <p className="text-center text-gray-400 py-8">Aún no hay calificaciones</p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-3">
                 {testimonials.map(t => (
                   <div key={t.id} className={`bg-white rounded-xl shadow p-4 ${!t.active ? 'opacity-50' : ''}`}>
-                    {t.image_url && (
-                      <img src={imageUrl(t.image_url)} alt={t.customer_name}
-                        className="w-full h-40 object-cover rounded-lg mb-3" />
-                    )}
-                    <div className="flex gap-0.5 mb-2">
-                      {[1,2,3,4,5].map(n => (
-                        <svg key={n} className={`w-4 h-4 ${n <= t.rating ? 'text-gold' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      ))}
-                    </div>
-                    {t.comment && <p className="text-gray-600 text-sm italic mb-2">"{t.comment}"</p>}
-                    <p className="font-bold text-navy">{t.customer_name}</p>
-                    <div className="flex gap-2 mt-3">
-                      <button onClick={() => toggleTestimonialActive(t)}
-                        className={`flex-1 text-xs font-bold py-1.5 rounded ${t.active ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}>
-                        {t.active ? 'Ocultar' : 'Mostrar'}
-                      </button>
-                      <button onClick={() => deleteTestimonial(t)}
-                        className="flex-1 bg-red-100 text-red-600 font-bold text-xs py-1.5 rounded hover:bg-red-200">
-                        Eliminar
-                      </button>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="font-bold text-navy">{t.customer_name}</span>
+                          <div className="flex gap-0.5">
+                            {[1,2,3,4,5].map(n => (
+                              <svg key={n} className={`w-4 h-4 ${n <= t.rating ? 'text-gold' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                          </div>
+                          <span className="text-xs text-gray-400">{new Date(t.created_at).toLocaleDateString('es-CO')}</span>
+                        </div>
+                        {t.comment && <p className="text-gray-600 text-sm italic">"{t.comment}"</p>}
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button onClick={() => toggleTestimonialActive(t)}
+                          className={`text-xs font-bold px-3 py-1.5 rounded ${t.active ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}>
+                          {t.active ? 'Ocultar' : 'Mostrar'}
+                        </button>
+                        <button onClick={() => deleteTestimonial(t)}
+                          className="bg-red-100 text-red-600 font-bold text-xs px-3 py-1.5 rounded hover:bg-red-200">
+                          Eliminar
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

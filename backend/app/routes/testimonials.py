@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from app.routes import testimonials_bp
-from app import db
+from app import db, limiter
 from app.models import Testimonial
 from app.auth_middleware import require_admin
 
@@ -16,11 +16,12 @@ def list_testimonials():
 
 
 @testimonials_bp.route('/', methods=['POST'])
-@require_admin
+@limiter.limit('3 per hour')
 def create_testimonial():
+    """Ruta pública — cualquiera puede dejar una calificación. Rate limit anti-abuso."""
     data = request.get_json()
-    if not data or 'customer_name' not in data:
-        return jsonify({'error': 'Falta el nombre del cliente'}), 400
+    if not data:
+        return jsonify({'error': 'Datos requeridos'}), 400
 
     rating = data.get('rating', 5)
     try:
@@ -29,13 +30,16 @@ def create_testimonial():
         rating = 5
     rating = max(1, min(5, rating))
 
+    customer_name = str(data.get('customer_name', '')).strip()[:255] or 'Anónimo'
+    comment = str(data.get('comment', '')).strip()[:1000]
+
     t = Testimonial(
-        customer_name=str(data['customer_name'])[:255],
+        customer_name=customer_name,
         rating=rating,
-        comment=str(data.get('comment', '')),
-        image_url=str(data.get('image_url', ''))[:500],
-        active=bool(data.get('active', True)),
-        position=int(data.get('position', 0)),
+        comment=comment,
+        image_url='',
+        active=True,
+        position=0,
     )
 
     try:
